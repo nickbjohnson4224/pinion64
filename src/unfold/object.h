@@ -14,25 +14,30 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __UNFOLD_MMAP_H
-#define __UNFOLD_MMAP_H
+#ifndef __UNFOLD_OBJECT_H
+#define __UNFOLD_OBJECT_H
 
 #include <stdint.h>
 #include <stddef.h>
 
-struct unfold_mmap_entry {
+#define UNFOLD_OBJECT_UNKNOWN 0xFFFFFFFF
+#define UNFOLD_OBJECT_PINION  0x00000001
+
+struct unfold_object {
 	uint64_t base;
-	uint64_t size;
+	uint32_t size;
+	uint32_t type;
 } __attribute__((packed));
 
-struct unfold_mmap {
-	uint64_t total;
+struct unfold_object_list {
 	uint32_t count;
-	struct unfold_mmap_entry entry[];
+	uint32_t __padding;
+	struct unfold_object entry[];
 } __attribute__((packed));
 
-extern struct unfold_mmap *mmap;
+extern struct unfold_object_list *object_list;
+extern struct unfold_object *pinion_image;
 
-int init_mmap(void);
+int init_object_list();
 
-#endif//__UNFOLD_MMAP_H
+#endif//__UNFOLD_OBJECT_H
