@@ -1,0 +1,6 @@
+build/
+root/
+tools/
+images/
+*.swp
+*.o
