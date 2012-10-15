@@ -14,19 +14,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __UNFOLD_LOG_H
-#define __UNFOLD_LOG_H
+#ifndef __UNFOLD_PORT_H
+#define __UNFOLD_PORT_H
 
-// logging devices
-//#define LOGDEV_VGA
-#define LOGDEV_SERIAL
+void outb(uint16_t port, uint8_t byte);
+void outw(uint16_t port, uint16_t word);
+void outd(uint16_t port, uint32_t dword);
 
-// logging levels
-#define INFO  0
-#define INIT  1
-#define DEBUG 2
-#define ERROR 3
+uint8_t  inb(uint16_t port);
+uint16_t inw(uint16_t port);
+uint32_t ind(uint16_t port);
 
-void log(int level, const char *fmt, ...);
-
-#endif/*__UNFOLD_LOG_H*/
+#endif

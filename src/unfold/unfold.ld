@@ -18,10 +18,14 @@ SECTIONS {
 	}
 
 	.bss : AT(ADDR(.bss)) {
-		_sbss = .;
 		*(COMMON)
 		*(.bss)
-		_ebss = .;
+	}
+
+	. = ALIGN(4096);
+
+	.pagedata : AT(ADDR(.pagedata)) {
+		*(.pagedata)
 	}
 
 	end = .;

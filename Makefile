@@ -119,21 +119,21 @@ define template
 OBJECTS_$(1) := $(patsubst src/%.s,build/%.o,$(shell find src/$(1) -name "*.s"))
 OBJECTS_$(1) += $(patsubst src/%.c,build/%.o,$(shell find src/$(1) -name "*.c"))
 
-build/$(1)/%.o: src/$(1)/%.c
+build/$(1)/%.o: src/$(1)/%.c src/$(1)/build.mk
 	@ mkdir -p `dirname $$@`
 	@ echo " CC	"$$<
 	@ $$(CC) -MMD -Isrc/$(1)/include $$(CFLAGS_$(1)) -c $$< -o $$@
 
-build/$(1)/%.o: src/$(1)/%.s
+build/$(1)/%.o: src/$(1)/%.s src/$(1)/build.mk
 	@ mkdir -p `dirname $$@`
 	@ echo " AS	"$$<
 	@ $$(AS) $$(ASFLAGS_$(1)) $$< -o $$@
 
-build/$(1)/$(PROGRAM_$(1)): $$(OBJECTS_$(1)) src/$(1)/$(1).ld
+build/$(1)/$(PROGRAM_$(1)): $$(OBJECTS_$(1)) src/$(1)/$(1).ld src/$(1)/build.mk
 	@ echo " LD	"$$@ $$(OBJECTS_$(1))
 	@ $$(LD) $$(LDFLAGS_$(1)) -o $$@ $$(OBJECTS_$(1)) -Tsrc/$(1)/$(1).ld
 
-$(1): build/$(1)/$(PROGRAM_$(1))
+$(1): build/$(1)/$(PROGRAM_$(1)) src/$(1)/build.mk
 	@ echo " CP	"build/$(1)/$$(PROGRAM_$(1)) -> root/$$(INSTALL_$(1))
 	@ cp build/$(1)/$$(PROGRAM_$(1)) root/$$(INSTALL_$(1))
 
