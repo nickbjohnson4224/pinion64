@@ -118,7 +118,7 @@ void *pmm_vaddr(uint64_t paddr);
 // processors / CCB
 //
 
-// Task State Segment (exactly 128 bytes)
+// Task State Segment (exactly 104 bytes)
 struct tss {
 	uint32_t reserved0;
 	uint64_t rsp0;
@@ -137,36 +137,49 @@ struct tss {
 	uint32_t reserved4;
 	uint16_t reserved5;
 	uint16_t iopb_base;
-
-	uint8_t padding[24];
 } __attribute__((packed));
 
 // CPU control block (exactly 4096 bytes)
 struct ccb {
 
-	uint16_t id;
-	uint16_t reserved[3];
+	uint32_t id;
+	uint32_t reserved0;
+
+	// call stack pointer
+	void *cstack;
+
+	// interrupt stack pointer
+	void *istack;
 
 	// active thread control block
 	struct tcb *active_tcb;
 
-	// active paging context
+	// paging contexts
 	void *active_pcx;
+	uint32_t active_pcx_id;
+	uint32_t active_root_pcx_id;
 
-	uint8_t padding0[1000];
+	uint8_t padding0[976];
 
 	// system call stack (offset 0x400)
-	uint8_t cstack[1024];
+	uint8_t cstack_space[1024];
 
 	// interrupt stack (offset 0x800)
-	uint8_t istack[1024];
+	uint8_t istack_space[1024];
 
 	// task state segment (offset 0xC00)
 	struct tss tss;
 
-	uint8_t padding1[896];
+	uint8_t padding1[920];
 
 } __attribute__((packed));
+
+struct ccb *ccb_new(void);
+struct ccb *ccb_get(uint32_t core_id);
+struct ccb *ccb_get_self(void);
+
+int ccb_load_tcb(struct tcb *tcb);
+struct tcb *ccb_unload_tcb(void);
 
 //
 // threading / TCB
@@ -192,7 +205,7 @@ struct xstate {
 // Thread Control Block (exactly 256 bytes)
 struct tcb {
 
-	// thread state and locking
+	// thread state and locking (8 bytes)
 	uint8_t mutex;
 	uint8_t state_reserved;
 	uint16_t state;
@@ -200,12 +213,11 @@ struct tcb {
 
 	// remainder valid if TSFLAG_VALID
 
-	// running thread information (8 bytes)
+	// running thread information (4 bytes)
 	// valid if TSFLAG_RUNNING
-	uint16_t running_cpu;
-	uint16_t running_reserved;
+	uint32_t running_cpu;
 
-	// waiting thread information (8 bytes)
+	// waiting thread information (4 bytes)
 	// valid if TSFLAG_WAITING
 	uint16_t wait_type;
 	uint16_t wait_evset_id;
@@ -216,14 +228,14 @@ struct tcb {
 	// remainder valid for external reads if TSFLAG_SUSPENDED
 
 	// paging context (8 bytes)
-	uint16_t pctx_id;
-	uint16_t pctx_reserved[3];
+	uint32_t pcx_id;
+	uint32_t pcx_reserved;
 
 	// fault address (most important for page faults)
 	uint64_t fault_addr;
 
 	// saved thread continuation (192 bytes)
-	void *cpu_stack; // pointer to CPU interrupt stack
+	uint64_t gs;
 	uint64_t rax;
 	uint64_t rcx;
 	uint64_t rbx;

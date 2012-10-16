@@ -1,24 +1,30 @@
 #include "internal.h"
 
+void debug_ptr(uint64_t ptr) {
+	log(DEBUG, "asm says: %p", ptr);
+}
+
 struct tcb *fault(struct tcb *thread) {
 	
-	log(ERROR, "fault caught: %d %p", thread->ivect, thread->rip);
+	log(ERROR, "fault caught: %p %d %p", thread, thread->ivect, thread->rip);
 
 	if (thread->ivect == 8) {
 		log(ERROR, "unhandled interrupt");
+
+		log(DEBUG, "unloaded TCB %p", ccb_unload_tcb());
+		for(;;);
+	}
+
+	if (thread->ivect < 32) {
+		log(ERROR, "unhandled fault");
 		for(;;);
 	}
 
 	return thread;
 }
 
-void init(uintptr_t baseaddr, void *mmap) {
+void init(uintptr_t baseaddr) {
 
 	log(INIT, "pinion64 starting...");
 	log(INFO, "loaded at base address %p", baseaddr);
-
-	pmm_init(mmap);
-	pcx_init();
-
-	log(DEBUG, "%p -> %p", mmap, pcx_get_flags(NULL, (uint64_t) mmap));
 }

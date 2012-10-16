@@ -16,6 +16,7 @@
 
 ; exported symbols
 global start
+global gdt
 global get_pinion_range
 
 ; imported symbols
@@ -23,6 +24,16 @@ extern __baseaddr
 extern __limitaddr
 extern init
 extern fault
+extern debug_ptr
+extern pge_alloc
+
+extern pmm_init
+extern pcx_init
+extern ccb_new
+extern tcb_new
+extern ccb_load_tcb
+
+LIMIT_CORES equ 1
 
 section .text
 
@@ -39,10 +50,6 @@ section .text
 
 section .data
 
-	idtptr:
-		dw (16 * 256) - 1
-		dq 0
-
 	gdt:
 		dq 0x0000000000000000 ; null entry
 		dq 0x0020980000000000 ; kernel code segment
@@ -51,30 +58,33 @@ section .data
 		dq 0x0020F20000000000 ; user data segment
 		dq 0x0000000000000000 ; reserved for 32-bit code
 		dq 0x0000000000000000 ; reserved for 32-bit data
-		dq 0x0000890000000080 ; TSS for CPU 0
+		dq 0x0000000000000000 ; reserved for future use
+		dq 0x0000000000000000 ; reserved for future use
+		dq 0x0000000000000000 ; reserved for future use
+		dq 0x0000000000000000 ; reserved for future use
+		dq 0x0000000000000000 ; reserved for future use
+		dq 0x0000000000000000 ; reserved for future use
+		dq 0x0000000000000000 ; reserved for future use
+		dq 0x0000000000000000 ; reserved for future use
+		dq 0x0000000000000000 ; reserved for future use
+
+		%rep LIMIT_CORES
+		dq 0x0000890000000067 ; TSS for CPU n is descriptor 0x80 + 0x10 * n
 		dq 0x0000000000000000
+		%endrep
 
 	gdtptr:
-		dw (8 * 9) - 1
+		dw (8 * 16 + 16 * LIMIT_CORES) - 1
+		dq 0
+
+	idt:
+		dq 0
+
+	idtptr:
+		dw (16 * 256) - 1
 		dq 0
 
 section .bss
-
-	idt:
-		resb 0x1000
-
-	ccb0:
-
-		cpu0_cstack:
-			resb 0x400
-
-		cpu0_istack:
-			resb 0x400
-
-		cpu0_tss:
-			resb 0x80
-
-		resb 0x380
 
 		resb 0x200
 	init_stack:
@@ -85,27 +95,36 @@ section .text
 	; pinion64 entry point
 	start:
 		
-		lea rsp, [rel init_stack]
-		push rbx
-		push rcx
-		push rdx
+		lea rsp, [rel init_stack - 0x18]
+		mov [rsp+0x10], rbx
+		mov [rsp+0x08], rcx
+		mov [rsp+0x00], rdx
 
-		call init_gdt
-		call init_idt
-		call init_tss
+		call gdt_init
 
-		pop rcx
-		pop rdx
-		pop rsi
 		lea rdi, [rel __baseaddr]
 		call init
+
+		mov rdi, [rsp+0x10]
+		call pmm_init
+
+		call pcx_init
+
+		call idt_init
+		
+		call ccb_new
+
+		call tcb_new
+
+		mov rdi, rax
+		call ccb_load_tcb
 
 		sti
 		hlt
 		jmp $
 
 	; initialize the global descriptor table
-	init_gdt:
+	gdt_init:
 
 		; update GDT pointer and load
 		lea rax, [rel gdtptr]
@@ -117,26 +136,9 @@ section .text
 		mov ax, 0x10
 		mov ds, ax
 		mov es, ax
-		mov fs, ax
 		mov gs, ax
+		mov fs, ax
 		mov ss, ax
-
-		ret
-
-	; initialize the task state segment
-	init_tss:
-
-		lea rax, [rel cpu0_tss]
-		lea rcx, [rel gdt + 0x38]
-		mov [rcx], ax
-		shr rax, 16
-		mov [rcx+4], al
-		mov [rcx+7], ah
-		shr rax, 16
-		mov [rcx+8], eax
-
-		mov ax, 0x38
-		ltr ax
 
 		ret
 
@@ -174,7 +176,7 @@ section .text
 	fault_stub_noerr 5  ; #BR - bound range exceeded
 	fault_stub_noerr 6  ; #UD - invalid opcode
 	fault_stub_noerr 7  ; #NM - device not available
-	fault_stub_err   8  ; #DF - double fault
+	fault_stub_noerr 8  ; #DF - double fault
 	fault_stub_err   10 ; #TS - invalid TSS
 	fault_stub_err   11 ; #NP - segment not present
 	fault_stub_err   12 ; #SS - stack fault
@@ -211,16 +213,12 @@ section .text
 		mov [rsp+0x70], r14
 		mov [rsp+0x78], r15
 
+		swapgs
 		lea rdi, [rsp-0x40]
-
-		lea rsp, [rel cpu0_istack + 0x400]
-;		mov rsp, [rsp]
-
+		mov rsp, [gs:0x10]
 		call fault
-
-		mov rbp, rsp
 		lea rsp, [rax+0x40]
-		mov [rsp], rbp       ; set cpu stack field in thread
+		swapgs
 
 		mov rax, [rsp+0x08]
 		mov rcx, [rsp+0x10]
@@ -243,7 +241,7 @@ section .text
 
 	; add a trap vector to the IDT
 	idt_set_trap_vector:
-		lea rcx, [rel idt]
+		mov rcx, [rel idt]
 		mov rax, rsi
 		shl rax, 4
 		add rcx, rax
@@ -252,7 +250,7 @@ section .text
 		shr rax, 16
 		mov [rcx+0x00], di
 		mov [rcx+0x02], word 0x0008
-		mov [rcx+0x04], word 0x8F00
+		mov [rcx+0x04], word 0x8F01
 		mov [rcx+0x06], ax
 		shr rax, 16
 		mov [rcx+0x08], eax
@@ -261,7 +259,7 @@ section .text
 
 	; add an IRQ vector to the IDT
 	idt_set_irq_vector:
-		lea rcx, [rel idt]
+		mov rcx, [rel idt]
 		mov rax, rsi
 		shl rax, 4
 		add rcx, rax
@@ -270,7 +268,7 @@ section .text
 		shr rax, 16
 		mov [rcx+0x00], di
 		mov [rcx+0x02], word 0x0008
-		mov [rcx+0x04], word 0x8E00
+		mov [rcx+0x04], word 0x8E01
 		mov [rcx+0x06], ax
 		shr rax, 16
 		mov [rcx+0x08], eax
@@ -278,7 +276,11 @@ section .text
 		ret
 
 	; initialize the interrupt descriptor table
-	init_idt:
+	idt_init:
+
+		; allocate IDT
+		call pge_alloc
+		mov [rel idt], rax
 
 		%macro build_fault 1
 			lea rdi, [rel fault_%1]
@@ -312,6 +314,7 @@ section .text
 		build_fault 18
 		build_fault 19
 
+		; build IRQ handlers
 		%assign i 32
 		%rep 256-32
 			build_irq i
@@ -320,7 +323,7 @@ section .text
 
 		; update IDT pointer and load
 		lea rax, [rel idtptr]
-		lea rcx, [rel idt]
+		mov rcx, [rel idt]
 		mov [rax+2], rcx
 		lidt [rax]
 
