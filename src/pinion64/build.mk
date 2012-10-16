@@ -1,6 +1,6 @@
 # Build parameters for module 'pinion64'
 
-CFLAGS_pinion64  := -std=c99
+CFLAGS_pinion64  := -std=c99 -MMD
 CFLAGS_pinion64  += -pedantic -Wall -Wextra -Wno-unused-parameter -Werror
 CFLAGS_pinion64  += -m64 -fPIC -mno-red-zone -fvisibility=hidden -static
 CFLAGS_pinion64  += -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-3dnow

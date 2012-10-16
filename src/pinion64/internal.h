@@ -16,6 +16,17 @@
 #define __PINION64_INTERNAL_H
 
 #include <stdint.h>
+#include <stddef.h>
+
+//
+// bootloader stuff
+//
+
+struct unfold64_mmap {
+	uint64_t total;
+	uint64_t count;
+	uint64_t entry[];
+};
 
 //
 // logging
@@ -34,32 +45,70 @@ void log(int level, const char *fmt, ...);
 // locking and synchronization
 //
 
+int  mutex_trylock(uint8_t *mutex);
+void mutex_acquire(uint8_t *mutex);
+void mutex_release(uint8_t *mutex);
+
 //
-// physical memory management
+// memory management
 //
 
-#define PMMAP_NOTRAM 0
-#define PMMAP_UNUSED 1
-#define PMMAP_PINION 2
-#define PMMAP_SYSTEM 3
+void pmm_init(void *mmap);
+void *pmm_alloc();
 
-struct pmmap_entry {
-	uint32_t type;
-	uint64_t base;
-	uint64_t size;
-};
+void *ccb_alloc();
+void ccb_free(void *ccb);
 
-struct pmmap {
-	uint64_t count;
-	struct pmmap_entry *entry;
-};
+void *tcb_alloc();
+void tcb_free(void *tcb);
 
-struct pmmap *pmmap_get  (void);
-void          pmmap_build(void *unfold_mmap)
+void *pge_alloc();
+void pge_free(void *page);
 
 //
 // paging structures
 //
+
+#define UPF_PRESENT  0x0001
+#define UPF_WRITE    0x0002
+#define UPF_EXEC     0x0004
+#define UPF_USER     0x0008
+
+#define UPF_ACCESSED 0x0010
+#define UPF_DIRTY    0x0020
+
+#define UPF_CACHE_DISABLE 0x1000
+#define UPF_WRITE_THROUGH 0x2000
+
+#define PF_PRES  0x1   // is present
+#define PF_WRITE 0x2   // is writable
+#define PF_USER  0x4   // is user accessible
+#define PF_PWT   0x8   // write-through
+#define PF_PCD   0x10  // cache disable
+#define PF_ACCS  0x20  // accessed
+#define PF_DIRTY 0x40  // dirty
+#define PF_LARGE 0x80  // large page
+#define PF_GLOBL 0x100 // global
+#define PF_NX    (1ULL << 63) // no-execute
+#define PF_BITS 0x8000000000000FFFULL // bits used as flags
+
+void      pcx_init(void);
+
+uint64_t *pcx_new(uint32_t *pcx_id);
+void      pcx_del(uint64_t *pcx);
+
+uint64_t *pcx_get(uint32_t pcx_id);
+
+uint64_t  pcx_get_trans(uint64_t *pcx, uint64_t addr);
+uint64_t  pcx_get_frame(uint64_t *pcx, uint64_t base);
+uint64_t  pcx_get_flags(uint64_t *pcx, uint64_t base);
+
+int       pcx_set_frame(uint64_t *pcx, uint64_t base, uint64_t size, uint64_t frame);
+int       pcx_set_flags(uint64_t *pcx, uint64_t base, uint64_t size, uint64_t flags);
+
+void      pcx_switch(uint64_t *pcx);
+
+void *pmm_vaddr(uint64_t paddr);
 
 //
 // event sets
@@ -95,20 +144,27 @@ struct tss {
 // CPU control block (exactly 4096 bytes)
 struct ccb {
 
-	// system call stack
-	uint8_t cstack[1024];
-
-	// interrupt stack
-	uint8_t istack[1024];
-
-	// task state segment
-	struct tss tss;
+	uint16_t id;
+	uint16_t reserved[3];
 
 	// active thread control block
 	struct tcb *active_tcb;
 
 	// active paging context
 	void *active_pcx;
+
+	uint8_t padding0[1000];
+
+	// system call stack (offset 0x400)
+	uint8_t cstack[1024];
+
+	// interrupt stack (offset 0x800)
+	uint8_t istack[1024];
+
+	// task state segment (offset 0xC00)
+	struct tss tss;
+
+	uint8_t padding1[896];
 
 } __attribute__((packed));
 
@@ -137,9 +193,10 @@ struct xstate {
 struct tcb {
 
 	// thread state and locking
+	uint8_t mutex;
+	uint8_t state_reserved;
 	uint16_t state;
-	uint16_t flags;
-	uint32_t mutex;
+	uint32_t id;
 
 	// remainder valid if TSFLAG_VALID
 
@@ -182,7 +239,7 @@ struct tcb {
 	uint64_t r13;
 	uint64_t r14;
 	uint64_t r15;
-	void    *xstate; // state for XSAVE/XRSTOR
+	void    *xstate; // state for (F)XSAVE/(F)XRSTOR
 
 	uint32_t ivect; // interrupt vector number
 	uint32_t saved; // set of saved register types
@@ -194,5 +251,9 @@ struct tcb {
 	uint64_t ss;
 	
 } __attribute__((packed));
+
+struct tcb *tcb_new(void);
+void        tcb_del(struct tcb *);
+struct tcb *tcb_get(uint32_t thread_id);
 
 #endif//__PINION64_INTERNAL_H

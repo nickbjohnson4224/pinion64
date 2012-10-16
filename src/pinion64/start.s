@@ -1,17 +1,43 @@
+; Copyright (C) 2012 Nick Johnson <nickbjohnson4224 at gmail.com>
+; 
+; Permission to use, copy, modify, and distribute this software for any
+; purpose with or without fee is hereby granted, provided that the above
+; copyright notice and this permission notice appear in all copies.
+; 
+; THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+; WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+; MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+; ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+; WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+; ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+; OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
 [bits 64]
 
 ; exported symbols
 global start
+global get_pinion_range
 
 ; imported symbols
 extern __baseaddr
+extern __limitaddr
 extern init
 extern fault
 
-section .data
+section .text
 
-	idt:
-		times 512 dq 0
+	get_pinion_range:
+		lea rax, [rel __baseaddr]
+		and rax, ~0xFFF
+		mov [rdi], rax
+		lea rax, [rel __limitaddr]
+		neg rax
+		and rax, ~0xFFF
+		neg rax
+		mov [rsi], rax
+		ret
+
+section .data
 
 	idtptr:
 		dw (16 * 256) - 1
@@ -34,6 +60,9 @@ section .data
 
 section .bss
 
+	idt:
+		resb 0x1000
+
 	ccb0:
 
 		cpu0_cstack:
@@ -47,7 +76,7 @@ section .bss
 
 		resb 0x380
 
-		resb 0x100
+		resb 0x200
 	init_stack:
 
 ; system initialization
@@ -56,12 +85,18 @@ section .text
 	; pinion64 entry point
 	start:
 		
-		lea rsp, [rel init_stack + 0x3F8]
+		lea rsp, [rel init_stack]
+		push rbx
+		push rcx
+		push rdx
 
 		call init_gdt
 		call init_idt
 		call init_tss
 
+		pop rcx
+		pop rdx
+		pop rsi
 		lea rdi, [rel __baseaddr]
 		call init
 
@@ -150,6 +185,12 @@ section .text
 	fault_stub_noerr 18 ; #MC - machine check
 	fault_stub_noerr 19 ; #XM - SIMD floating point error
 
+	%assign i 32
+	%rep 256-32
+		irq_stub i
+	%assign i i+1
+	%endrep
+
 	; generic interrupt state saving
 	save_state_full:	
 
@@ -179,10 +220,6 @@ section .text
 
 		mov rbp, rsp
 		lea rsp, [rax+0x40]
-
-		add rax, 0x100
-		mov [rbp+0x404], rax ; set ESP0 to thread
-		mov [rbp+0x424], rax ; set IST1 to thread
 		mov [rsp], rbp       ; set cpu stack field in thread
 
 		mov rax, [rsp+0x08]
@@ -249,6 +286,12 @@ section .text
 			call idt_set_trap_vector
 		%endmacro
 
+		%macro build_irq 1
+			lea rdi, [rel irq_%1]
+			mov rsi, %1
+			call idt_set_irq_vector
+		%endmacro
+
 		; build fault handlers
 		build_fault 0
 		build_fault 1
@@ -268,6 +311,12 @@ section .text
 		build_fault 17
 		build_fault 18
 		build_fault 19
+
+		%assign i 32
+		%rep 256-32
+			build_irq i
+		%assign i i+1
+		%endrep
 
 		; update IDT pointer and load
 		lea rax, [rel idtptr]

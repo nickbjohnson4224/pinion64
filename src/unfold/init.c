@@ -26,7 +26,7 @@
 const uint32_t pinion_phys = 0x00200000;
 const uint64_t pinion_base = 0xFFFFFFFFC0200000ULL;
 
-extern void init_enter_long(uint64_t entry);
+extern void init_enter_long(uint64_t entry, uint64_t _mmap, uint64_t _objl);
 
 static uint64_t load_pinion(const struct elf_ehdr *elf);
 static uint64_t load_pinion64(const struct elf64_ehdr *elf64);
@@ -72,7 +72,7 @@ void init(const struct multiboot_header *mboot, uint32_t magic) {
 
 	log(INIT, "pinion entry point at %x%x", (uint32_t) (entry >> 32), (uint32_t) entry);
 
-	init_enter_long(entry);
+	init_enter_long(entry, (uintptr_t) mmap + 0xFFFFFFFFC0000000ULL, 0ULL);
 }
 
 static uint64_t load_pinion(const struct elf_ehdr *elf) {

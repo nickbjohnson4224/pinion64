@@ -27,7 +27,7 @@ struct unfold_mmap_entry {
 
 struct unfold_mmap {
 	uint64_t total;
-	uint32_t count;
+	uint64_t count;
 	struct unfold_mmap_entry entry[];
 } __attribute__((packed));
 
