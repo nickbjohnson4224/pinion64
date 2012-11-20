@@ -40,6 +40,8 @@ extern mutex_release
 	section .text
 
 		%1_alloc:
+
+			push rbx
 			
 			lea rdi, [rel %1_lock]
 			call mutex_acquire
@@ -51,19 +53,33 @@ extern mutex_release
 
 			mov rcx, [rax]
 			mov [rel %1_list], rcx
+			mov rbx, rax
 
 			lea rdi, [rel %1_lock]
 			call mutex_release
+
+			mov rax, rbx
+			pop rbx
 			ret
 
 			.pull:
 			call pmm_alloc
+
+			test rax, rax
+			jz .fail
 
 			mov rcx, [rel %1_list]
 			mov [rax], rcx
 			mov [rel %1_list], rax
 
 			jmp .retry
+
+			.fail:
+			lea rdi, [rel %1_lock]
+			call mutex_release
+			xor rax, rax
+			pop rbx
+			ret
 
 		%1_free:
 

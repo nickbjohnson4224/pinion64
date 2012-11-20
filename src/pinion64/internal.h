@@ -142,24 +142,35 @@ struct tss {
 // CPU control block (exactly 4096 bytes)
 struct ccb {
 
+	// core ID (offset 0x00)
 	uint32_t id;
 	uint32_t reserved0;
 
-	// call stack pointer
+	// call stack pointer (offset 0x08)
 	void *cstack;
 
-	// interrupt stack pointer
+	// interrupt stack pointer (offset 0x10)
 	void *istack;
 
-	// active thread control block
+	// active thread control block (offset 0x18)
 	struct tcb *active_tcb;
 
-	// paging contexts
+	// paging contexts (offset 0x20)
 	void *active_pcx;
 	uint32_t active_pcx_id;
 	uint32_t active_root_pcx_id;
 
-	uint8_t padding0[976];
+	uint8_t padding0[952];
+
+	// APIC ID of core (offset 0x3E0)
+	uint32_t apic_id;
+	uint32_t reserved1;
+
+	// IOAPIC configuration space (offset 0x3F0)
+	uint32_t *ioapic_ptr;
+
+	// LAPIC configuration space (offset 0x3F8)
+	uint32_t *lapic_ptr;
 
 	// system call stack (offset 0x400)
 	uint8_t cstack_space[1024];
@@ -209,9 +220,9 @@ struct tcb {
 	uint8_t mutex;
 	uint8_t state_reserved;
 	uint16_t state;
-	uint32_t id;
 
 	// remainder valid if TSFLAG_VALID
+	uint32_t id;
 
 	// running thread information (4 bytes)
 	// valid if TSFLAG_RUNNING
