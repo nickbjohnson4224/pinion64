@@ -22,11 +22,27 @@
 // bootloader stuff
 //
 
+// unfold64 memory map structure
 struct unfold64_mmap {
 	uint64_t total;
 	uint64_t count;
 	uint64_t entry[];
-};
+} __attribute__((packed));
+
+// unfold64 object entry structure
+struct unfold64_obje {
+	uint64_t base;
+	uint32_t size;
+	uint32_t type;
+	char name[48];
+} __attribute__((packed));
+
+// unfold64 object list structure
+struct unfold64_objl {
+	uint32_t count;
+	uint32_t reserved;
+	struct unfold64_obje entry[];
+} __attribute__((packed));
 
 //
 // logging
@@ -42,6 +58,27 @@ struct unfold64_mmap {
 void log(int level, const char *fmt, ...);
 
 //
+// Pinion API
+//
+
+//
+// API symbol resolution
+//
+
+uint64_t api_resolve(uint8_t apirev, const char *symbol);
+
+//
+// configuration (TODO)
+//
+
+#define CONFIG_TYPE_PTR 1
+#define CONFIG_TYPE_INT 2
+#define CONFIG_TYPE_STR 3
+
+void config_set(const char *domain, const char *key, const char *value);
+void config_tap(const char *domain, const char *key, int type, void *tap);
+
+//
 // locking and synchronization
 //
 
@@ -55,6 +92,7 @@ void mutex_release(uint8_t *mutex);
 
 void pmm_init(void *mmap);
 void *pmm_alloc();
+uint64_t pmm_get_pinion_load_addr(void);
 
 void *ccb_alloc();
 void ccb_free(void *ccb);
@@ -103,7 +141,7 @@ uint64_t  pcx_get_trans(uint64_t *pcx, uint64_t addr);
 uint64_t  pcx_get_frame(uint64_t *pcx, uint64_t base);
 uint64_t  pcx_get_flags(uint64_t *pcx, uint64_t base);
 
-int       pcx_set_frame(uint64_t *pcx, uint64_t base, uint64_t size, uint64_t frame);
+int       pcx_set_frame(uint64_t *pcx, uint64_t base, uint64_t size, uint64_t frame, uint64_t flags);
 int       pcx_set_flags(uint64_t *pcx, uint64_t base, uint64_t size, uint64_t flags);
 
 void      pcx_switch(uint64_t *pcx);
@@ -216,9 +254,8 @@ struct xstate {
 // Thread Control Block (exactly 256 bytes)
 struct tcb {
 
-	// thread state and locking (8 bytes)
-	uint8_t mutex;
-	uint8_t state_reserved;
+	// thread state (8 bytes)
+	uint16_t state_reserved;
 	uint16_t state;
 
 	// remainder valid if TSFLAG_VALID
@@ -262,6 +299,7 @@ struct tcb {
 	uint64_t r13;
 	uint64_t r14;
 	uint64_t r15;
+
 	void    *xstate; // state for (F)XSAVE/(F)XRSTOR
 
 	uint32_t ivect; // interrupt vector number

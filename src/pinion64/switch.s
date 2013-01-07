@@ -1,7 +1,7 @@
 [bits 64]
 
 ; exported symbols
-global pcx_switch
+global pcx_switch:function internal
 
 ; imported symbols
 extern pmm_base

@@ -22,11 +22,13 @@
 
 #define UNFOLD_OBJECT_UNKNOWN 0xFFFFFFFF
 #define UNFOLD_OBJECT_PINION  0x00000001
+#define UNFOLD_OBJECT_CONFIG  0x00000002
 
 struct unfold_object {
 	uint64_t base;
 	uint32_t size;
 	uint32_t type;
+	char name[48];
 } __attribute__((packed));
 
 struct unfold_object_list {

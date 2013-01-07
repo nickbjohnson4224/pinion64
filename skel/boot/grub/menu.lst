@@ -2,5 +2,7 @@ default 0
 timeout 0
 
 title Pinion64
-kernel /boot/unfold
+kernel /boot/unfold pinion=/boot/pinion64 config=/boot/pconf
 module /boot/pinion64
+module /boot/pconf
+module /boot/tester

@@ -1,9 +1,7 @@
 OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(start)
+ENTRY(main)
 
 SECTIONS {
-
-	PROVIDE_HIDDEN(__baseaddr = .);
 
 	.text : {
 		*(.text)
@@ -18,6 +16,4 @@ SECTIONS {
 		*(COMMON)
 		*(.bss)
 	}
-
-	PROVIDE_HIDDEN(__limitaddr = .);
 }

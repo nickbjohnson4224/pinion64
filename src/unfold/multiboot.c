@@ -49,6 +49,12 @@ void init_multiboot(const struct multiboot_header *mboot) {
 		}
 	}
 
+	if (mboot->flags & MBOOT_FLAG_CMDLINE) {
+		
+		// read command line
+		log(INFO, "command line: %s", mboot->cmdline);
+	}
+
 	if (mboot->flags & MBOOT_FLAG_MODS) {
 		
 		// has multiboot module list
@@ -58,17 +64,24 @@ void init_multiboot(const struct multiboot_header *mboot) {
 		for (uint32_t i = 0; i < mboot->mods_count; i++) {
 
 			// add to object list
-			object_list->entry[i].base = mboot->mods_addr->mod_start;
-			object_list->entry[i].size = mboot->mods_addr->mod_end - 
-				mboot->mods_addr->mod_start;
+			object_list->entry[i].base = mboot->mods_addr[i].mod_start;
+			object_list->entry[i].size = mboot->mods_addr[i].mod_end - 
+				mboot->mods_addr[i].mod_start;
 			object_list->entry[i].type = UNFOLD_OBJECT_UNKNOWN;
+
+			// copy name
+			int j;
+			for (j = 0; j < 48; j++) {
+				object_list->entry[i].name[j] = mboot->mods_addr[i].string[j];
+				if (!mboot->mods_addr->string[j]) break;
+			}
+			object_list->entry[i].name[47] = '\0';
 
 			// check for pinion64 module
 			// TODO -- less crappy parser
-			const char *string = mboot->mods_addr->string;
+			const char *string = mboot->mods_addr[i].string;
 			const char *pinion64 = "pinion64";
 
-			int j;
 			for (j = 0; string[j]; j++);
 			for (; string[j] != '/' && j >= 0; j--);
 			j++;

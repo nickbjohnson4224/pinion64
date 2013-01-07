@@ -16,9 +16,9 @@
 
 section .text
 
-global outb
-global outw
-global outd
+global outb:function internal
+global outw:function internal
+global outd:function internal
 
 outb:
 	mov ax, si
@@ -38,9 +38,9 @@ outd:
 	out dx, eax
 	ret
 
-global inb
-global inw
-global ind
+global inb:function internal
+global inw:function internal
+global ind:function internal
 
 inb:
 	mov dx, di

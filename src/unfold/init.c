@@ -72,7 +72,13 @@ void init(const struct multiboot_header *mboot, uint32_t magic) {
 
 	log(INIT, "pinion entry point at %x%x", (uint32_t) (entry >> 32), (uint32_t) entry);
 
-	init_enter_long(entry, (uintptr_t) mmap + 0xFFFFFFFFC0000000ULL, 0ULL);
+	// relocate object list
+	for (uint32_t i = 0; i < object_list->count; i++) {
+		object_list->entry[i].base += 0xFFFFFFFFC0000000ULL;
+	}
+
+	init_enter_long(entry, (uintptr_t) mmap + 0xFFFFFFFFC0000000ULL, 
+		(uintptr_t) object_list + 0xFFFFFFFFC0000000ULL);
 }
 
 static uint64_t load_pinion(const struct elf_ehdr *elf) {
@@ -111,13 +117,9 @@ static uint64_t load_pinion64(const struct elf64_ehdr *elf64) {
 		const struct elf64_phdr *phdr = 
 			(const void*) &binary[elf64->e_phoff + elf64->e_phentsize * i];
 
-		uint64_t base = phdr->p_vaddr + pinion_base;
 		uint32_t phys = phdr->p_vaddr + pinion_phys;
 
 		if (phdr->p_type == 1) {
-			log(DEBUG, "LOAD %x%x (phys %x) from %x size %d", 
-				(uint32_t) (base >> 32), (uint32_t) base, phys, 
-				&binary[phdr->p_offset], phdr->p_filesz);
 
 			for (uint32_t j = 0; j < phdr->p_memsz; j++) {
 				if (j < phdr->p_filesz) {

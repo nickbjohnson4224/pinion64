@@ -36,8 +36,8 @@ int init_object_list(void) {
 		uint32_t limitl = (object_list->entry[i].base + object_list->entry[i].size);
 		uint32_t limith = (object_list->entry[i].base + object_list->entry[i].size) >> 32;
 
-		log(INFO, "object: [%x%x %x%x] (%d KB)", baseh, basel, limith, limitl,
-			object_list->entry[i].size >> 10);
+		log(INFO, "object: [%x%x %x%x] (%d KB) name: %s", baseh, basel, limith, limitl,
+			object_list->entry[i].size >> 10, object_list->entry[i].name);
 	}
 
 	// locate first pinion image

@@ -1,7 +1,7 @@
 [bits 64]
 
 ; exported symbols
-global find_mptable
+global find_mptable:function internal
 
 ; imported symbols
 extern pmm_vaddr

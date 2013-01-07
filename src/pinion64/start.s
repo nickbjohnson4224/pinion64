@@ -15,15 +15,15 @@
 [bits 64]
 
 ; exported symbols
-global start
-global gdt
-global get_pinion_range
+global start:function internal
+global gdt:data internal
+global get_pinion_range:function internal
+
+global read_cr2:function internal
 
 ; imported symbols
 extern __baseaddr
 extern __limitaddr
-extern init
-extern test
 
 extern pmm_init
 extern pcx_init
@@ -32,6 +32,9 @@ extern ccb_new
 extern tcb_new
 extern ccb_load_tcb
 extern apic_init
+extern load_kernel
+
+extern resume_state_full
 
 LIMIT_CORES equ 1
 
@@ -52,8 +55,8 @@ section .data
 
 	gdt:
 		dq 0x0000000000000000 ; null entry
-		dq 0x0020980000000000 ; kernel code segment
-		dq 0x0020920000000000 ; kernel data segment
+		dq 0x0020980000000000 ; kernel/pinion code segment
+		dq 0x0020920000000000 ; kernel/pinion data segment
 		dq 0x0020F80000000000 ; user code segment
 		dq 0x0020F20000000000 ; user data segment
 		dq 0x0000000000000000 ; reserved for 32-bit code
@@ -104,12 +107,10 @@ section .text
 		mov rdi, rax
 		call ccb_load_tcb
 
-		call apic_init
+		mov rdi, [rsp+0x08]
+		call load_kernel
 
-		call test
-
-		sti
-		hlt
+		jmp resume_state_full
 
 	; initialize the global descriptor table
 	gdt_init:
@@ -128,4 +129,8 @@ section .text
 		mov fs, ax
 		mov ss, ax
 
+		ret
+
+	read_cr2:
+		mov rax, cr2
 		ret

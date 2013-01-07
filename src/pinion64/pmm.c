@@ -121,3 +121,7 @@ void pmm_init(void *_mmap) {
 			pmm_map_high->entry[i].base + pmm_map_high->entry[i].size);
 	}
 }
+
+uint64_t pmm_get_pinion_load_addr(void) {
+	return pmm_base + 0x200000;
+}

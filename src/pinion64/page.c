@@ -14,6 +14,15 @@
 
 #include "internal.h"
 
+// XXX
+// This file here is basically all hacked together, and will probably explode
+// if there are out-of-memory errors anywhere (and doesn't handle updating
+// large pages properly.) Fix it once everything seems to be working, please!
+//
+// This could also be rewritten in assembly for some extra speed, considering
+// it is the core of all memory management.
+// XXX
+
 static uint64_t base = 0xFFFFFFFFC0000000ULL;
 
 static uint64_t *pcx_root;
@@ -135,5 +144,43 @@ uint64_t pcx_get_flags(uint64_t *pcx, uint64_t addr) {
 
 	mutex_release(&pcx_root_lock);
 
+	return 0;
+}
+
+int pcx_set_frame(uint64_t *pcx, uint64_t addr, uint64_t size, uint64_t frame, uint64_t flags) {
+	
+	// reject unaligned requests
+	if ((size & 0xFFF) || (addr & 0xFFF)) return 1;
+
+	if (!pcx) pcx = pcx_root;
+
+	uint64_t *pt = pcx;
+
+	mutex_acquire(&pcx_root_lock);
+
+	for (int i = 4; i > 1; i--) {
+		uint64_t idx = (addr >> (12 + 9 * (i - 1))) & 0x1FF;
+
+		if (!(pt[idx] & PF_PRES)) {
+
+			uint64_t *newpt = pge_alloc();
+			pt[idx] = ((uint64_t) newpt - 0xFFFFFFFFC0000000) | PF_PRES | PF_WRITE | PF_USER;
+			for (uint32_t j = 0; j < 512; j++) {
+				newpt[j] = 0ULL;
+			}
+		}
+
+		if (pt[idx] & PF_LARGE) {
+			mutex_release(&pcx_root_lock);
+			return 1;
+		}
+
+		pt = (void*) ((pt[idx] &~ PF_BITS) + base);
+	}
+
+	uint64_t idx = (addr >> 12) & 0x1FF;
+	pt[idx] = frame | flags;
+
+	mutex_release(&pcx_root_lock);
 	return 0;
 }

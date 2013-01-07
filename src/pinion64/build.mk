@@ -7,6 +7,7 @@ CFLAGS_pinion64  += -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-3dnow
 CFLAGS_pinion64  += -ffreestanding
 CFLAGS_pinion64  += -O3 -fomit-frame-pointer
 ASFLAGS_pinion64 := -felf64
-LDFLAGS_pinion64 := -melf_x86_64 -z max-page-size=0x1000
+LDFLAGS_pinion64 := -melf_x86_64 -z max-page-size=0x1000 
+LDFLAGS_pinion64 += -soname libpinion.so.0.4 -export-dynamic -pie -s
 PROGRAM_pinion64 := pinion64
 INSTALL_pinion64 := boot/pinion64

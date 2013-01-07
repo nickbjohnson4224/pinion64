@@ -6,7 +6,12 @@ void debug_ptr(uint64_t ptr) {
 
 void fault(struct tcb *thread) {
 	
-	log(ERROR, "fault caught: %p %d %p", thread, thread->ivect, thread->rip);
+	log(ERROR, "fault caught: %p %d %p %p", thread, thread->ivect, thread->rip);
+
+	if (thread->ivect == 14) {
+		extern uint64_t read_cr2(void);
+		log(ERROR, "page fault at addr %p", read_cr2());
+	}
 
 	if (thread->ivect == 8) {
 		log(ERROR, "unhandled interrupt");
@@ -19,16 +24,6 @@ void fault(struct tcb *thread) {
 	}
 }
 
-void init(uintptr_t baseaddr) {
-
-	log(INIT, "pinion64 starting...");
-	log(INFO, "loaded at base address %p", baseaddr);
-}
-
-void test(void) {
-
-	struct tcb *tcb = ccb_get_self()->active_tcb;
-
-	log(DEBUG, "current TCB: %p", tcb);
-
+void apifunc_thread_yield(void) {
+	log(DEBUG, "yield!");
 }

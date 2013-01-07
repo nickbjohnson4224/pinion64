@@ -95,7 +95,7 @@ clean-tools:
 #
 ##############################################################################
 
-COMPONENTS := unfold pinion64
+COMPONENTS := unfold pinion64 tester
 
 CC := ./tools/bin/x86_64-elf-gcc
 LD := ./tools/bin/x86_64-elf-ld
@@ -116,7 +116,7 @@ skeleton:
 # build templates
 define template
 
-OBJECTS_$(1) := $(patsubst src/%.s,build/%.o,$(shell find src/$(1) -name "*.s"))
+OBJECTS_$(1) += $(patsubst src/%.s,build/%.o,$(shell find src/$(1) -name "*.s"))
 OBJECTS_$(1) += $(patsubst src/%.c,build/%.o,$(shell find src/$(1) -name "*.c"))
 
 build/$(1)/%.o: src/$(1)/%.c src/$(1)/build.mk

@@ -1,8 +1,10 @@
 [bits 64]
 
 ; exported symbols
-global idt_init
-global apic_init
+global idt_init:function internal
+global apic_init:function internal
+
+global resume_state_full:function internal
 
 ; imported symbols
 extern fault
@@ -95,6 +97,9 @@ section .text
 		lea rdi, [rsp-0x40]
 		mov rsp, [gs:0x10]
 		call fault
+		
+	resume_state_full:
+
 		mov rsp, [gs:0x18]
 		add rsp, 0x40
 		swapgs
@@ -115,7 +120,7 @@ section .text
 		mov r14, [rsp+0x70]
 		mov r15, [rsp+0x78]
 
-		add rsp, 0x90
+		add rsp, 0x98
 		iretq
 
 	; add a trap vector to the IDT

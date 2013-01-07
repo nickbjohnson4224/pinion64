@@ -1,0 +1,7 @@
+# pinion configuration
+pinion min-api 0.4
+logger serial level info
+
+# perform tests
+kernel /boot/tester base ffffffff00000000 stack ffffffff800000000
+object /boot/tconf export tester.conf

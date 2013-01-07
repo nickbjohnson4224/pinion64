@@ -15,12 +15,12 @@
 [bits 64]
 
 ; exported symbols
-global ccb_new
-global ccb_get
-global ccb_get_self
+global ccb_new:function internal
+global ccb_get:function internal
+global ccb_get_self:function internal
 
-global ccb_load_tcb
-global ccb_unload_tcb
+global ccb_load_tcb:function internal
+global ccb_unload_tcb:function internal
 
 ; imported symbols
 extern gdt

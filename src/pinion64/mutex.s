@@ -1,9 +1,9 @@
 [bits 64]
 
 ; exported symbols
-global mutex_trylock
-global mutex_acquire
-global mutex_release
+global mutex_trylock:function internal
+global mutex_acquire:function internal
+global mutex_release:function internal
 
 section .text
 

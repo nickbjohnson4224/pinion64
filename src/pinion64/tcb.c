@@ -72,9 +72,14 @@ struct tcb *tcb_new(void) {
 			tcb_table[i / 512][i % 512] = tcb;
 
 			// initialize TCB
-			tcb->mutex = 1;
 			tcb->state = TSTATE_RE;
 			tcb->id    = i;
+
+			tcb->pcx_id = 0;
+			tcb->xstate = NULL;
+			tcb->cs     = 0x08;
+			tcb->ss     = 0x10;
+			tcb->rflags = 0x200020;
 
 			// return new TCB
 			mutex_release(&tcb_table_lock);
@@ -106,13 +111,6 @@ void tcb_del(struct tcb *tcb) {
 	if (!(tcb->state & TSFLAG_VALID) || tcb->id >= TCB_LIMIT) {
 
 		log(ERROR, "tcb_del - TCB not valid");
-		return;
-	}
-
-	// make sure TCB lock is acquired
-	if (!tcb->mutex) {
-		
-		log(ERROR, "tcb_del - TCB lock not pre-acquired");
 		return;
 	}
 	

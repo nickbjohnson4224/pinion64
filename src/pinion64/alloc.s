@@ -26,8 +26,8 @@ extern mutex_release
 %macro allocator 2
 
 	; exported symbols
-	global %1_alloc
-	global %1_free
+	global %1_alloc:function internal
+	global %1_free:function internal
 
 	section .data
 
