@@ -1,4 +1,4 @@
-; Copyright (C) 2012 Nick Johnson <nickbjohnson4224 at gmail.com>
+; Copyright (C) 2012-2013 Nick Johnson <nickbjohnson4224 at gmail.com>
 ; 
 ; Permission to use, copy, modify, and distribute this software for any
 ; purpose with or without fee is hereby granted, provided that the above
@@ -29,6 +29,7 @@ extern mutex_trylock
 extern mutex_acquire
 extern mutex_release
 extern pcx_get
+extern pmm_vaddr
 extern __baseaddr
 
 extern debug_ptr
@@ -91,6 +92,9 @@ section .text
 		mov rcx, [rax + rbx * 8]
 		mov [rcx], ebx
 
+		; point CCB to itself
+		mov [rcx+0x30], rcx
+
 		; set up stack pointers
 		lea rax, [rcx+0x800]
 		mov [rcx+0x08], rax
@@ -132,6 +136,23 @@ section .text
 		mov ecx, 0xC0000101
 		wrmsr
 
+		; enable local APIC
+		mov ecx, 0x1B
+		rdmsr
+		and edx, 0xF
+		and eax, 0xFFFFF000
+		or eax,  0x800
+		wrmsr
+
+		; set local APIC pointer in CCB
+		xor rdi, rdi
+		mov edi, edx
+		shl rdi, 32
+		mov edi, eax
+		and edi, 0xFFFFF000
+		call pmm_vaddr
+		mov [gs:0x3F8], rax
+
 		mov rbx, [rsp]
 		add rsp, 8
 		ret
@@ -164,12 +185,6 @@ section .text
 		test rsi, rsi
 		jz .fail
 
-		; set TCB state to READY
-		mov ax, 1
-		mov [rsi+2], ax
-		mov eax, -1
-		mov [rsi+0x10], eax
-
 		; remove TCB from CCB
 		xor rax, rax
 		mov [gs:0x18], rax
@@ -191,17 +206,6 @@ section .text
 		mov rsi, [gs:0x18]
 		test rsi, rsi
 		jnz .fail
-
-		; check that TCB state is READY
-		mov ax, [rdi+2]
-		cmp ax, 1
-		jne .fail
-
-		; set TCB state to RUNNING
-		mov ax, 3
-		mov [rdi+2], ax
-		mov eax, [gs:0x00]
-		mov [rdi+0x10], eax
 
 		; insert TCB into CCB, TSS.RSP0, TSS.IST1
 		mov [gs:0x18], rdi

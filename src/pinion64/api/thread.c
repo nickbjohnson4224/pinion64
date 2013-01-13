@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Nick Johnson <nickbjohnson4224 at gmail.com>
+// Copyright (C) 2013 Nick Johnson <nickbjohnson4224 at gmail.com>
 //
 // Permission to use, copy, modify, and distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -12,36 +12,9 @@
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-#include "internal.h"
+#include "../include/pinion.h"
+#include "../internal.h"
 
-static int strcmp(const char *a, const char *b) {
-	
-	while (*a && *b) {
-		if (*(a++) != *(b++)) return 1;
-	}
-
-	return 0;
-}
-
-#define APICATCH(NAME) \
-do {\
-	extern void apientry_##NAME(void);\
-	\
-	if (!strcmp(symbol, "__PINION_" #NAME)) {\
-		return pinion_load_addr + (uint64_t) apientry_##NAME;\
-	}\
-} while (0) 
-
-extern void pinion_thread_yield(void);
-
-uint64_t api_resolve(const char *symbol) {
-	static uint64_t pinion_load_addr = 0;
-	
-	if (!pinion_load_addr) pinion_load_addr = pmm_get_pinion_load_addr();
-
-	APICATCH(thread_yield);
-	APICATCH(page_set);
-	APICATCH(page_get);
-
-	return 0;
+void apilogic_thread_yield(void) {
+	log(DEBUG, "yield!");
 }

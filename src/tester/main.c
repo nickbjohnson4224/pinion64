@@ -17,6 +17,14 @@ void puts(const char *s) {
 	}
 }
 
+void putx(uint64_t x) {
+	const char *digit = "0123456789ABCDEF";
+
+	for (int i = 16; i >= 0; i--) {
+		putchar(digit[(x >> (4 * i)) & 0xF]);
+	}
+}
+
 const char *string = "foobar\n";
 
 int main() {
@@ -25,7 +33,17 @@ int main() {
 
 	puts(string);
 
-	pinion_thread_yield();
+	__PINION_thread_yield();
+
+	__PINION_page_set(0x10000, 0x1000000, 
+		__PINION_PAGE_VALID | __PINION_PAGE_READ, 0x2000);
+	
+	struct __PINION_page_content page = __PINION_page_get(0x11000);
+
+	putx(page.flags);
+	puts(" ");
+	putx(page.paddr);
+	puts("\n");
 
 	puts("that was fun!\n");
 

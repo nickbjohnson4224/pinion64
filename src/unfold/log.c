@@ -31,6 +31,8 @@ static void logputx(uint32_t x);
 void log(int level, const char *fmt, ...) {
 	va_list ap;
 
+	if (level < DEBUG) return;
+
 	switch (level) {
 	case INFO:  logputs("[info]  "); break;
 	case INIT:  logputs("[init]  "); break;

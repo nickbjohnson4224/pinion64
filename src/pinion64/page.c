@@ -50,10 +50,11 @@ void pcx_init(void) {
 	// initialize pinion mappings
 	uint64_t *pinion_pt2 = pge_alloc();
 	for (int i = 0; i < 256; i++) {
-		pinion_pt2[i] = ((uint64_t) i << 21) | PF_PRES | PF_WRITE | PF_LARGE | PF_GLOBL;
+		pinion_pt2[i] = ((uint64_t) i << 21) | PF_VALID | PF_PRES | PF_WRITE | PF_LARGE | PF_GLOBL;
 	}
 	for (int i = 256; i < 512; i++) {
-		pinion_pt2[i] = (((uint64_t) i << 21) + 0xC0000000) | PF_PRES | PF_WRITE | PF_LARGE | PF_GLOBL | PF_PCD;
+		pinion_pt2[i] = (((uint64_t) i << 21) + 0xC0000000) 
+			| PF_VALID | PF_PRES | PF_WRITE | PF_LARGE | PF_GLOBL | PF_PCD;
 	}
 
 	uint64_t *pinion_pt3 = (void*) ((pcx_root[511] + base) & ~0xFFF);
@@ -164,7 +165,7 @@ int pcx_set_frame(uint64_t *pcx, uint64_t addr, uint64_t size, uint64_t frame, u
 		if (!(pt[idx] & PF_PRES)) {
 
 			uint64_t *newpt = pge_alloc();
-			pt[idx] = ((uint64_t) newpt - 0xFFFFFFFFC0000000) | PF_PRES | PF_WRITE | PF_USER;
+			pt[idx] = ((uint64_t) newpt - 0xFFFFFFFFC0000000) | PF_VALID | PF_PRES | PF_WRITE | PF_USER;
 			for (uint32_t j = 0; j < 512; j++) {
 				newpt[j] = 0ULL;
 			}

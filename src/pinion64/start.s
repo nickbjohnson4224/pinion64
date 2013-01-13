@@ -25,6 +25,8 @@ global read_cr2:function internal
 extern __baseaddr
 extern __limitaddr
 
+extern init
+
 extern pmm_init
 extern pcx_init
 extern idt_init
@@ -96,19 +98,12 @@ section .text
 		mov [rsp+0x08], rcx
 		mov [rsp+0x00], rdx
 
+		mov rdi, [rsp+0x00]
+		mov rsi, [rsp+0x08]
+		mov rdx, [rsp+0x10]
+
 		call gdt_init
-		mov rdi, [rsp+0x10]
-		call pmm_init
-		call pcx_init
-		call idt_init
-		call ccb_new
-
-		call tcb_new
-		mov rdi, rax
-		call ccb_load_tcb
-
-		mov rdi, [rsp+0x08]
-		call load_kernel
+		call init
 
 		jmp resume_state_full
 

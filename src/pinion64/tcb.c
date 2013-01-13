@@ -24,7 +24,7 @@ static uint8_t tcb_table_lock;
 // tcb_new - allocate a new thread control block
 //
 // Returns a pointer to a new, initialized TCB on success, NULL on error.
-// The TCB will have a locked mutex, and will be in state READY.
+// The TCB will have a locked mutex, and will be in a suspended state.
 // This function can fail if there is no memory available for new TCBs or
 // if there are no free TCB table slots.
 // 
@@ -72,7 +72,7 @@ struct tcb *tcb_new(void) {
 			tcb_table[i / 512][i % 512] = tcb;
 
 			// initialize TCB
-			tcb->state = TSTATE_RE;
+			tcb->state = TCB_STATE_SUSPENDED;
 			tcb->id    = i;
 
 			tcb->pcx_id = 0;
@@ -107,17 +107,17 @@ void tcb_del(struct tcb *tcb) {
 		return;
 	}
 
-	// check that TCB is valid
-	if (!(tcb->state & TSFLAG_VALID) || tcb->id >= TCB_LIMIT) {
+	// check that TCB is deletable
+	if (tcb->state == TCB_STATE_FREE) {
 
-		log(ERROR, "tcb_del - TCB not valid");
+		log(ERROR, "tcb_del - TCB already free");
 		return;
 	}
 	
 	mutex_acquire(&tcb_table_lock);
 	
 	// check that subtable exists
-	if (!(tcb_table[tcb->id / 512])) {
+	if (tcb->id >= TCB_LIMIT || !(tcb_table[tcb->id / 512])) {
 
 		log(ERROR, "tcb_del - TCB does not have subtable (must be invalid)");
 		mutex_release(&tcb_table_lock);

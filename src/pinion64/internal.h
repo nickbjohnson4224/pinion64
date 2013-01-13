@@ -45,6 +45,13 @@ struct unfold64_objl {
 } __attribute__((packed));
 
 //
+// init stuff
+//
+
+void idt_init(void);
+void load_kernel(struct unfold64_objl *objl);
+
+//
 // logging
 //
 
@@ -65,18 +72,7 @@ void log(int level, const char *fmt, ...);
 // API symbol resolution
 //
 
-uint64_t api_resolve(uint8_t apirev, const char *symbol);
-
-//
-// configuration (TODO)
-//
-
-#define CONFIG_TYPE_PTR 1
-#define CONFIG_TYPE_INT 2
-#define CONFIG_TYPE_STR 3
-
-void config_set(const char *domain, const char *key, const char *value);
-void config_tap(const char *domain, const char *key, int type, void *tap);
+uint64_t api_resolve(const char *symbol);
 
 //
 // locking and synchronization
@@ -107,17 +103,6 @@ void pge_free(void *page);
 // paging structures
 //
 
-#define UPF_PRESENT  0x0001
-#define UPF_WRITE    0x0002
-#define UPF_EXEC     0x0004
-#define UPF_USER     0x0008
-
-#define UPF_ACCESSED 0x0010
-#define UPF_DIRTY    0x0020
-
-#define UPF_CACHE_DISABLE 0x1000
-#define UPF_WRITE_THROUGH 0x2000
-
 #define PF_PRES  0x1   // is present
 #define PF_WRITE 0x2   // is writable
 #define PF_USER  0x4   // is user accessible
@@ -127,6 +112,9 @@ void pge_free(void *page);
 #define PF_DIRTY 0x40  // dirty
 #define PF_LARGE 0x80  // large page
 #define PF_GLOBL 0x100 // global
+#define PF_VALID 0x200 // valid (pinion-defined)
+#define PF_NREAD 0x400 // no-read (pinion-defined)
+#define PF_PTCOW 0x800 // pagetable copy-on-write (pinion-defined)
 #define PF_NX    (1ULL << 63) // no-execute
 #define PF_BITS 0x8000000000000FFFULL // bits used as flags
 
@@ -177,6 +165,126 @@ struct tss {
 	uint16_t iopb_base;
 } __attribute__((packed));
 
+struct lapic_reg {
+	uint32_t value;
+	uint32_t ___[3];
+} __attribute__((packed));
+
+struct lapic_regs {
+	
+	uint32_t reserved00[8];
+
+	// Local APIC ID Register (offset 0x10, RO)
+	uint32_t id;
+	uint32_t reserved01[3];
+
+	// Local APIC Version Register (offset 0x20, RO)
+	uint32_t version;
+	uint32_t reserved02[3];
+
+	uint32_t reserved03[16];
+
+	// Task Priority Register (TPR) (offset 0x80, RW)
+	uint32_t task_priority;
+	uint32_t reserved04[3];
+
+	// Arbitration Priority Register (APR) (offset 0x90, RO)
+	uint32_t arbitration_priority;
+	uint32_t reserved05[3];
+
+	// Processor Priority Register (PPR) (offset 0xA0, RO)
+	uint32_t processor_priority;
+	uint32_t reserved06[3];
+
+	// EOI Register (offset 0xB0, WO)
+	uint32_t eoi;
+	uint32_t reserved07[3];
+
+	// Remote Read Register (RRD) (offset 0xC0, RO)
+	uint32_t remote_read;
+	uint32_t reserved08[3];
+
+	// Logical Destination Register (offset 0xD0, RW)
+	uint32_t logical_destination;
+	uint32_t reserved09[3];
+
+	// Destination Format Register (offset 0xE0, RW)
+	uint32_t destination_format;
+	uint32_t reserved10[3];
+
+	// Spurious Interrupt Vector Register (offset 0xF0, RW)
+	uint32_t spurious_interrupt_vector;
+	uint32_t reserved11[3];
+
+	// In-Service Register (ISR) (offset 0x100, RO)
+	struct lapic_reg in_service[8];
+
+	// Trigger-Mode Register (TMR) (offset 0x180, RO)
+	struct lapic_reg trigger_mode[8];
+
+	// Interrupt Request Register (IRR) (offset 0x200, RO)
+	struct lapic_reg interrupt_request[8];
+
+	// Error Status Register (offset 0x280, RO)
+	uint32_t error_status;
+	uint32_t reserved12[3];
+
+	uint32_t reserved13[24];
+
+	// LVT CMCI Register (offset 0x2F0, RW)
+	uint32_t lvt_cmci;
+	uint32_t reserved14[3];
+
+	// Interrupt Command Register (ICR) bits 0-31 (offset 0x300, RW)
+	uint32_t interrupt_command_0;
+	uint32_t reserved15[3];
+
+	// Interrupt Command Register (ICR) bits 32-63 (offset 0x310, RW)
+	uint32_t interrupt_command_1;
+	uint32_t reserved16[3];
+
+	// LVT Timer Register (offset 0x320, RW)
+	uint32_t lvt_timer;
+	uint32_t reserved17[3];
+
+	// LVT Thermal Sensor Register (offset 0x330, RW)
+	uint32_t lvt_thermal_sensor;
+	uint32_t reserved18[3];
+
+	// LVT Performance Monitoring Counters Register (offset 0x340, RW)
+	uint32_t lvt_performance_monitoring_counters;
+	uint32_t reserved19[3];
+
+	// LVT LINT0 Register (offset 0x350, RW)
+	uint32_t lvt_lint0;
+	uint32_t reserved20[3];
+
+	// LVT LINT1 Register (offset 0x360, RW)
+	uint32_t lvt_lint1;
+	uint32_t reserved21[3];
+
+	// LVT Error Register (offset 0x370, RW)
+	uint32_t lvt_error;
+	uint32_t reserved22[3];
+
+	// Initial Count Register (for Timer) (offset 0x380, RW)
+	uint32_t timer_initial_count;
+	uint32_t reserved23[3];
+
+	// Current Count Register (for Timer) (offset 0x390, RO)
+	uint32_t timer_current_count;
+	uint32_t reserved24[3];
+
+	uint32_t reserved25[16];
+
+	// Divide Configuration Register (for Timer) (offset 0x3E0, RW)
+	uint32_t timer_divide_configuration;
+	uint32_t reserved26[3];
+
+	uint32_t reserved27[4];
+
+} __attribute__((packed));
+
 // CPU control block (exactly 4096 bytes)
 struct ccb {
 
@@ -198,7 +306,10 @@ struct ccb {
 	uint32_t active_pcx_id;
 	uint32_t active_root_pcx_id;
 
-	uint8_t padding0[952];
+	// this ccb;
+	struct ccb *self;
+
+	uint8_t padding0[944];
 
 	// APIC ID of core (offset 0x3E0)
 	uint32_t apic_id;
@@ -208,7 +319,7 @@ struct ccb {
 	uint32_t *ioapic_ptr;
 
 	// LAPIC configuration space (offset 0x3F8)
-	uint32_t *lapic_ptr;
+	volatile struct lapic_regs *lapic;
 
 	// system call stack (offset 0x400)
 	uint8_t cstack_space[1024];
@@ -234,17 +345,14 @@ struct tcb *ccb_unload_tcb(void);
 // threading / TCB
 //
 
-#define TSTATE_FR 0x0 // free (unallocated)
-#define TSTATE_RE 0x1 // ready
-#define TSTATE_RU 0x3 // running
-#define TSTATE_WA 0x5 // waiting
-#define TSTATE_SR 0x9 // suspended ready
-#define TSTATE_SW 0xD // suspended waiting
-
-#define TSFLAG_VALID     0x01
-#define TSFLAG_RUNNING   0x02
-#define TSFLAG_WAITING   0x04
-#define TSFLAG_SUSPENDED 0x08
+#define TCB_STATE_FREE              0 // free
+#define TCB_STATE_ZOMBIE            1 // zombie
+#define TCB_STATE_SUSPENDEDWAITING  2 // suspended waiting
+#define TCB_STATE_SUSPENDED         3 // suspended
+#define TCB_STATE_WAITING           4 // waiting
+#define TCB_STATE_QUEUED            5 // queued
+#define TCB_STATE_RUNNING           6 // running
+#define TCB_STATE_NULL              7 // nonexistent (not used internally)
 
 // Extended State
 struct xstate {
@@ -254,62 +362,67 @@ struct xstate {
 // Thread Control Block (exactly 256 bytes)
 struct tcb {
 
-	// thread state (8 bytes)
-	uint16_t state_reserved;
-	uint16_t state;
+	uint16_t reserved0;
 
-	// remainder valid if TSFLAG_VALID
-	uint32_t id;
+	// thread state
+	uint16_t state; // (offset 0x02)
 
-	// running thread information (4 bytes)
-	// valid if TSFLAG_RUNNING
-	uint32_t running_cpu;
+	// remainder valid if not TCB_STATE_FREE
+	
+	// thread ID
+	uint32_t id; // (offset 0x04)
 
-	// waiting thread information (4 bytes)
-	// valid if TSFLAG_WAITING
-	uint16_t wait_type;
-	uint16_t wait_evset_id;
+	// running thread information
+
+	// valid if TCB_STATE_RUNNING
+	uint32_t running_cpu; // (offset 0x08)
+
+	// waiting thread information
+	// valid if TCB_STATE_WAITING or TCB_STATE_SUSPENDEDWAITING
+	uint16_t wait_type;     // (offset 0x0C)
+	uint16_t wait_evset_id; // (offset 0x0E)
 
 	// reserved for future use
-	uint64_t reserved[4];
+	uint64_t reserved1[4];
 
-	// remainder valid for external reads if TSFLAG_SUSPENDED
+	// remainder valid for external reads if TCB_STATE_SUSPENDED 
+	// or TCB_STATE_SUSPENDEDWATITING
 
-	// paging context (8 bytes)
-	uint32_t pcx_id;
-	uint32_t pcx_reserved;
+	// paging context
+	uint32_t pcx_id; // (offset 0x30)
+	uint32_t pcx_reserved; // (offset 0x34)
 
-	// fault address (most important for page faults)
+	// fault address (offset 0x38)
 	uint64_t fault_addr;
 
-	// saved thread continuation (192 bytes)
-	uint64_t gs;
-	uint64_t rax;
-	uint64_t rcx;
-	uint64_t rbx;
-	uint64_t rdx;
-	uint64_t rdi;
-	uint64_t rsi;
-	uint64_t rbp;
-	uint64_t r8;
-	uint64_t r9;
-	uint64_t r10;
-	uint64_t r11;
-	uint64_t r12;
-	uint64_t r13;
-	uint64_t r14;
-	uint64_t r15;
+	// saved thread continuation (192 bytes) (offset 0x40)
+	uint64_t gs;  // (offset 0x40)
+	uint64_t rax; // (offset 0x48)
+	uint64_t rcx; // (offset 0x50)
+	uint64_t rbx; // (offset 0x58)
+	uint64_t rdx; // (offset 0x60)
+	uint64_t rdi; // (offset 0x68)
+	uint64_t rsi; // (offset 0x70)
+	uint64_t rbp; // (offset 0x78)
+	uint64_t r8;  // (offset 0x80)
+	uint64_t r9;  // (offset 0x88)
+	uint64_t r10; // (offset 0x90)
+	uint64_t r11; // (offset 0x98)
+	uint64_t r12; // (offset 0xA0)
+	uint64_t r13; // (offset 0xA8)
+	uint64_t r14; // (offset 0xB0)
+	uint64_t r15; // (offset 0xB8)
 
-	void    *xstate; // state for (F)XSAVE/(F)XRSTOR
+	void    *xstate; // state for (F)XSAVE/(F)XRSTOR (offset 0xC0)
 
-	uint32_t ivect; // interrupt vector number
-	uint32_t saved; // set of saved register types
-	uint64_t error; // error code (if applicable)
-	uint64_t rip;
-	uint64_t cs;
-	uint64_t rflags;
-	uint64_t rsp;
-	uint64_t ss;
+	uint32_t ivect;  // interrupt vector number (offset 0xC8)
+	uint32_t saved;  // set of saved register types (offset 0xC4)
+	uint64_t error;  // error code (if applicable) (offset 0xD0)
+	uint64_t rip;    // (offset 0xD8)
+	uint64_t cs;     // (offset 0xE0)
+	uint64_t rflags; // (offset 0xE8)
+	uint64_t rsp;    // (offset 0xF0)
+	uint64_t ss;     // (offset 0xF8)
 	
 } __attribute__((packed));
 

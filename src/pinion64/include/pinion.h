@@ -17,27 +17,63 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 //
 // API identification
 //
 
-extern const int pinion_api_major;
-extern const int pinion_api_minor;
-extern const char *pinion_implementation;
+extern const int __PINION_api_major;
+extern const int __PINION_api_minor;
+extern const char *__PINION_implementation;
 
 //
 // Threading
 //
 
-struct pinion_thread_state;
+struct __PINION_thread_state;
 
-void pinion_thread_yield(void);
-void pinion_thread_spawn(const struct pinion_thread_state *state);
-void pinion_thread_exit(void);
+void __PINION_thread_yield(void);
+void __PINION_thread_spawn(const struct __PINION_thread_state *state);
+void __PINION_thread_exit(void);
 
 //
-// Paging Contexts
+// Paging
+//
+
+#define __PINION_PAGE_VALID         0x0001
+
+#define __PINION_PAGE_READ          0x0010
+#define __PINION_PAGE_WRITE         0x0020
+#define __PINION_PAGE_EXEC          0x0040
+#define __PINION_PAGE_USER          0x0080
+
+#define __PINION_PAGE_ACCESSED      0x0100
+#define __PINION_PAGE_DIRTY         0x0200
+
+#define __PINION_PAGE_CACHE_DISABLE 0x1000
+#define __PINION_PAGE_WRITE_THROUGH 0x2000
+
+typedef uint8_t  __PINION_pagetable_id;
+typedef uint64_t __PINION_virtaddr;
+typedef uint64_t __PINION_physaddr;
+typedef uint64_t __PINION_pageflags;
+
+bool __PINION_page_set(__PINION_virtaddr virtual_base, 
+	__PINION_physaddr physical_base,
+	__PINION_pageflags page_flags, 
+	size_t length);
+
+struct __PINION_page_content {
+	__PINION_physaddr  paddr;
+	__PINION_pageflags flags;
+} __attribute__((packed));
+
+struct __PINION_page_content __PINION_page_get(
+	__PINION_virtaddr virtual_base);
+
+//
+// Page Tables
 //
 
 //
@@ -57,15 +93,7 @@ struct pinion_object_list {
 	struct pinion_object object[];
 } __attribute__((packed));
 
-const struct pinion_object_list *pinion_get_object_list(void);
-const struct pinion_object *pinion_get_object(const char *name);
-// future: int pinion_add_object(const struct pinion_object *object);
-// future: void pinion_reconfigure(const char *config_object);
-
-//
-// Tweakable Extensions
-//
-
-int pinion_tweak(const char *feature, const char *field, const char *value);
+const struct pinion_object_list *__PINION_get_object_list(void);
+const struct pinion_object *__PINION_get_object(const char *name);
 
 #endif//__PINION_H
