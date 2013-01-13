@@ -38,7 +38,7 @@ and test system may be compiled and tested by typing:
 
 	make test
 
-(This relies on mkisofs and QEMU being installed on the host system.)
+(This relies on cdrtools being installed on the host system.)
 
 To clean up all generated files, type:
 

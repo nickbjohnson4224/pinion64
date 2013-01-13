@@ -306,7 +306,7 @@ struct ccb {
 	uint32_t active_pcx_id;
 	uint32_t active_root_pcx_id;
 
-	// this ccb;
+	// this ccb (offset 0x30)
 	struct ccb *self;
 
 	uint8_t padding0[944];

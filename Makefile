@@ -10,9 +10,8 @@ all: make-all
 
 tools: clean-tools
 	@ echo ""
-	@ echo "Starting automatic cross-toolchain build. This may take a while depending on"
-	@ echo "your Internet connection and processor speed. I would take this opportunity to"
-	@ echo "mix up a batch of muffins if I were you."
+	@ echo "Starting automatic cross-toolchain and emulator build. This may take a while"
+	@ echo "depending on your Internet connection and processor speed."
 	@ echo ""
 	@ echo "The cross-toolchain will be completely contained within the tools/ directory. No"
 	@ echo "superuser access is required."
@@ -24,6 +23,8 @@ tools: clean-tools
 	@ wget -P tools http://ftp.gnu.org/gnu/gcc/gcc-4.7.0/gcc-4.7.0.tar.bz2
 	@ echo " WGET	tools/nasm-2.09.10.tar.bz2"
 	@ wget -P tools http://www.nasm.us/pub/nasm/releasebuilds/2.09.10/nasm-2.09.10.tar.bz2
+	@ echo " WGET	tools/qemu-1.2.2.tar.bz2"
+	@ wget -P tools http://wiki.qemu-project.org/download/qemu-1.2.2.tar.bz2
 	@ echo " UNTAR	tools/binutils-2.22.tar.bz2"
 	@ tar -xf tools/binutils-2.22.tar.bz2 -C tools
 	@ rm tools/binutils-2.22.tar.bz2
@@ -33,6 +34,9 @@ tools: clean-tools
 	@ echo " UNTAR	tools/nasm-2.09.10.tar.bz2"
 	@ tar -xf tools/nasm-2.09.10.tar.bz2 -C tools
 	@ rm tools/nasm-2.09.10.tar.bz2
+	@ echo " UNTAR	tools/qemu-1.2.2.tar.bz2"
+	@ tar -xf tools/qemu-1.2.2.tar.bz2 -C tools
+	@ rm tools/qemu-1.2.2.tar.bz2
 	@ mkdir -p tools/build-binutils
 	@ echo ""
 	@ echo " CONFIGURING BINUTILS"
@@ -84,10 +88,42 @@ tools: clean-tools
 	@ echo ""
 	@ echo " CLEAN	tools/nasm-2.09.10"
 	@ rm -rf tools/nasm-2.09.10
-	
+	@ mkdir -p tools/build-qemu
+	@ echo ""
+	@ echo " CONFIGURING QEMU"
+	@ echo ""
+	@ cd tools/build-qemu && ../qemu-1.2.2/configure --prefix=$(PWD)/tools \
+		--python=$(shell which python2) --target-list=x86_64-softmmu
+	@ echo ""
+	@ echo " COMPILIING QEMU"
+	@ echo ""
+	@ make -C tools/build-qemu
+	@ echo ""
+	@ echo " INSTALLING QEMU"
+	@ echo ""
+	@ make -C tools/build-qemu install
+	@ echo ""
+	@ echo " CLEAN	tools/build-qemu tools/qemu-1.2.2"
+	@ rm -rf tools/build-qemu tools/qemu-1.2.2	
+
 clean-tools:
+	@ echo ""
+	@ echo "WARNING!"
+	@ echo "if you have built the cross-toolchain and emulator already, this is going to"
+	@ echo "erase the tools/ directly completely and rebuild it from scratch. This is"
+	@ echo "not going to affect any of your source code, but it could take a long time."
+	@ echo ""
+	@ echo "Press Ctrl-C in the next three seconds to cancel the build."
+	@ echo ""
+	@ sleep 1
+	@ echo "1"
+	@ sleep 1
+	@ echo "2"
+	@ sleep 1
+	@ echo "3"
+	@ echo ""
 	@ echo " CLEAN	tools/"
-	@ - rm -r tools
+	@ - rm -rf tools
 
 ##############################################################################
 #
