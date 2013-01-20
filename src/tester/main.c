@@ -27,27 +27,37 @@ void putx(uint64_t x) {
 
 const char *string = "foobar\n";
 
+void stuff() {
+
+	puts("happy birthday!\n");
+
+	for(;;) {
+//		for (volatile int i = 0; i < 1000; i++);
+		puts("c");
+	}
+}
+
+static uint8_t stackspace[1024];
+
 int main() {
 
 	puts("hello, world!\n");
 
-	puts(string);
+	struct __PINION_thread_state proto = {
+		.rip = (uintptr_t) stuff,
+		.rsp = (uintptr_t) &stackspace[1008]
+	};
 
-	__PINION_thread_yield();
+	__PINION_thread_create(&proto);
 
-	__PINION_page_set(0x10000, 0x1000000, 
-		__PINION_PAGE_VALID | __PINION_PAGE_READ, 0x2000);
-	
-	struct __PINION_page_content page = __PINION_page_get(0x11000);
+	proto.rsp = (uintptr_t) &stackspace[500];
 
-	putx(page.flags);
-	puts(" ");
-	putx(page.paddr);
-	puts("\n");
+	__PINION_thread_create(&proto);
 
-	puts("that was fun!\n");
-
-	for(;;);
+	for(;;) {
+//		for (volatile int i = 0; i < 1000; i++);
+		puts("p");
+	}
 
 	return 0;
 }

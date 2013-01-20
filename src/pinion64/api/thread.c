@@ -16,5 +16,23 @@
 #include "../internal.h"
 
 void apilogic_thread_yield(void) {
-	log(DEBUG, "yield!");
+
+	// TODO cause switch (not trivial; need to save current thread state)
+
+}
+
+__PINION_thread_id apilogic_thread_create(const struct __PINION_thread_state *proto) {
+
+	struct tcb *new_tcb = tcb_new();
+
+	if (!new_tcb) {
+		return 0;
+	}
+
+	new_tcb->rip = proto->rip;
+	new_tcb->rsp = proto->rsp;
+
+	scheduler_add_tcb(new_tcb);
+
+	return new_tcb->id;
 }

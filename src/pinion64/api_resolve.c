@@ -40,6 +40,7 @@ uint64_t api_resolve(const char *symbol) {
 	if (!pinion_load_addr) pinion_load_addr = pmm_get_pinion_load_addr();
 
 	APICATCH(thread_yield);
+	APICATCH(thread_create);
 	APICATCH(page_set);
 	APICATCH(page_get);
 

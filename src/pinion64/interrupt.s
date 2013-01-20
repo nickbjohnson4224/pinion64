@@ -42,12 +42,14 @@ section .text
 	; macros for generating fault handler stubs
 	%macro fault_stub_err 1
 	fault_%1:
+		cli
 		push %1
 		jmp save_state_full
 	%endmacro
 
 	%macro fault_stub_noerr 1
 	fault_%1:
+		cli
 		push 0
 		push %1
 		jmp save_state_full
@@ -56,6 +58,7 @@ section .text
 	; macro for generating IRQ handler stubs
 	%macro irq_stub 1
 	irq_%1:
+		cli
 		push 0
 		push %1
 		jmp save_state_full

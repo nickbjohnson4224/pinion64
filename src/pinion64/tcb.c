@@ -42,7 +42,7 @@ struct tcb *tcb_new(void) {
 	mutex_acquire(&tcb_table_lock);
 
 	// search for empty TCB slot
-	for (uint32_t i = 0; i < TCB_LIMIT; i++) {
+	for (uint32_t i = 1; i < TCB_LIMIT; i++) {
 
 		if (!tcb_table[i / 512]) {
 
@@ -79,7 +79,7 @@ struct tcb *tcb_new(void) {
 			tcb->xstate = NULL;
 			tcb->cs     = 0x08;
 			tcb->ss     = 0x10;
-			tcb->rflags = 0x200020;
+			tcb->rflags = 0x200200;
 
 			// return new TCB
 			mutex_release(&tcb_table_lock);

@@ -201,6 +201,9 @@ static void relocate(uint64_t kernel_base, struct dynamic *d, const struct elf64
 		ptr = (void*) (kernel_base + r->r_offset);
 		value = kernel_base + r->r_addend;
 		break;
+	default:
+		log(DEBUG, "unhandled dynamic relocation type %d", r->r_type);
+		return;
 	}
 
 	// perform relocation

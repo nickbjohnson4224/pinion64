@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Nick Johnson <nickbjohnson4224 at gmail.com>
+// Copyright (C) 2012-2013 Nick Johnson <nickbjohnson4224 at gmail.com>
 //
 // Permission to use, copy, modify, and distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -383,7 +383,10 @@ struct tcb {
 	uint16_t wait_evset_id; // (offset 0x0E)
 
 	// reserved for future use
-	uint64_t reserved1[4];
+	uint64_t reserved1[3];
+
+	// next TCB in scheduler or waitlist
+	struct tcb *next;
 
 	// remainder valid for external reads if TCB_STATE_SUSPENDED 
 	// or TCB_STATE_SUSPENDEDWATITING
@@ -429,5 +432,9 @@ struct tcb {
 struct tcb *tcb_new(void);
 void        tcb_del(struct tcb *);
 struct tcb *tcb_get(uint32_t thread_id);
+
+void scheduler_add_tcb(struct tcb *tcb);
+int  scheduler_rem_tcb(struct tcb *tcb);
+void scheduler_schedule();
 
 #endif//__PINION64_INTERNAL_H
