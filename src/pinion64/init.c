@@ -28,6 +28,18 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 		return;
 	}
 
+	if (tcb->ivect == 0x100) {
+		log(DEBUG, "yield %d", tcb->rdi);
+		
+		if (tcb->rdi == 0 && tcb->state != TCB_STATE_RUNNING) {
+			ccb_unload_tcb();
+		}
+
+		scheduler_schedule();
+
+		return;
+	}
+
 	log(ERROR, "fault caught: %p %d %p", tcb, tcb->ivect, tcb->rip);
 
 	if (tcb->ivect == 14) {

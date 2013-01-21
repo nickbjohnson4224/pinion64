@@ -19,6 +19,7 @@ global idt_init:function internal
 global apic_init:function internal
 
 global resume_state_full:function internal
+global idle:function internal
 
 ; imported symbols
 extern fault
@@ -85,10 +86,16 @@ section .text
 	fault_stub_noerr 19 ; #XM - SIMD floating point error
 
 	%assign i 32
-	%rep 256-32
+	%rep 255-32
 		irq_stub i
 	%assign i i+1
 	%endrep
+
+	yield:
+		cli
+		push 0
+		push 0x100
+		jmp save_state_full
 
 	; generic interrupt state saving
 	save_state_full:	
@@ -218,10 +225,15 @@ section .text
 
 		; build IRQ handlers
 		%assign i 32
-		%rep 256-32
+		%rep 255-32
 			build_irq i
 		%assign i i+1
 		%endrep
+
+		; build internal software interrupt
+		lea rdi, [rel yield]
+		mov rsi, 255
+		call idt_set_trap_vector	
 
 		; update IDT pointer and load
 		lea rax, [rel idtptr]
@@ -255,3 +267,11 @@ section .text
 		mov [gs:0x3F0], rax
 
 		ret
+
+	idle:
+
+		swapgs
+		sti
+		.loop:
+		hlt
+		jmp .loop

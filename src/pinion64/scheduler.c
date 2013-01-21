@@ -90,6 +90,9 @@ void scheduler_schedule(void) {
 		ccb_load_tcb(new_tcb);
 	}
 	else {
-		// TODO idle
+		log(DEBUG, "idling");
+		ccb_get_self()->lapic->lvt_timer = 0;
+		extern void idle();
+		idle();
 	}
 }

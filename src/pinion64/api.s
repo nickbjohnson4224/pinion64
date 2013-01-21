@@ -36,10 +36,42 @@
 
 %endmacro
 
+%macro apifunc_then_yield 2
+	global __PINION_%1:function default
+	global apientry_%1:function default
+	extern apilogic_%1
+
+	section .text
+
+	__PINION_%1:
+	apientry_%1:
+		cli
+		swapgs
+		mov r11, rsp
+		mov rsp, [gs:0x10]
+		push r11
+		call apilogic_%1
+		pop rsp
+		swapgs
+
+		; 0 - yield if suspended or zombie
+		; 1 - yield if preempted
+		; 2 - yield unconditionally
+
+		mov rdi, %2 
+		int 0xFF
+		sti
+		ret
+
+%endmacro
+
 ; thread API -----------------------------------------------------------------
 
-apifunc thread_yield
-apifunc thread_create
+apifunc_then_yield thread_yield, 2
+apifunc_then_yield thread_create, 1
+apifunc_then_yield thread_pause, 0
+apifunc_then_yield thread_resume, 1
+apifunc_then_yield thread_exit, 0
 
 ; paging API -----------------------------------------------------------------
 

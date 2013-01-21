@@ -23,8 +23,8 @@ tools: clean-tools
 	@ wget -P tools http://ftp.gnu.org/gnu/gcc/gcc-4.7.0/gcc-4.7.0.tar.bz2
 	@ echo " WGET	tools/nasm-2.09.10.tar.bz2"
 	@ wget -P tools http://www.nasm.us/pub/nasm/releasebuilds/2.09.10/nasm-2.09.10.tar.bz2
-	@ echo " WGET	tools/qemu-1.2.2.tar.bz2"
-	@ wget -P tools http://wiki.qemu-project.org/download/qemu-1.2.2.tar.bz2
+#	@ echo " WGET	tools/qemu-1.2.2.tar.bz2"
+#	@ wget -P tools http://wiki.qemu-project.org/download/qemu-1.2.2.tar.bz2
 	@ echo " UNTAR	tools/binutils-2.22.tar.bz2"
 	@ tar -xf tools/binutils-2.22.tar.bz2 -C tools
 	@ rm tools/binutils-2.22.tar.bz2
@@ -34,9 +34,9 @@ tools: clean-tools
 	@ echo " UNTAR	tools/nasm-2.09.10.tar.bz2"
 	@ tar -xf tools/nasm-2.09.10.tar.bz2 -C tools
 	@ rm tools/nasm-2.09.10.tar.bz2
-	@ echo " UNTAR	tools/qemu-1.2.2.tar.bz2"
-	@ tar -xf tools/qemu-1.2.2.tar.bz2 -C tools
-	@ rm tools/qemu-1.2.2.tar.bz2
+#	@ echo " UNTAR	tools/qemu-1.2.2.tar.bz2"
+#	@ tar -xf tools/qemu-1.2.2.tar.bz2 -C tools
+#	@ rm tools/qemu-1.2.2.tar.bz2
 	@ mkdir -p tools/build-binutils
 	@ echo ""
 	@ echo " CONFIGURING BINUTILS"
@@ -88,23 +88,23 @@ tools: clean-tools
 	@ echo ""
 	@ echo " CLEAN	tools/nasm-2.09.10"
 	@ rm -rf tools/nasm-2.09.10
-	@ mkdir -p tools/build-qemu
-	@ echo ""
-	@ echo " CONFIGURING QEMU"
-	@ echo ""
-	@ cd tools/build-qemu && ../qemu-1.2.2/configure --prefix=$(PWD)/tools \
-		--python=$(shell which python2) --target-list=x86_64-softmmu
-	@ echo ""
-	@ echo " COMPILIING QEMU"
-	@ echo ""
-	@ make -C tools/build-qemu
-	@ echo ""
-	@ echo " INSTALLING QEMU"
-	@ echo ""
-	@ make -C tools/build-qemu install
-	@ echo ""
-	@ echo " CLEAN	tools/build-qemu tools/qemu-1.2.2"
-	@ rm -rf tools/build-qemu tools/qemu-1.2.2	
+#	@ mkdir -p tools/build-qemu
+#	@ echo ""
+#	@ echo " CONFIGURING QEMU"
+#	@ echo ""
+#	@ cd tools/build-qemu && ../qemu-1.2.2/configure --prefix=$(PWD)/tools \
+#		--python=$(shell which python2) --target-list=x86_64-softmmu
+#	@ echo ""
+#	@ echo " COMPILIING QEMU"
+#	@ echo ""
+#	@ make -C tools/build-qemu
+#	@ echo ""
+#	@ echo " INSTALLING QEMU"
+#	@ echo ""
+#	@ make -C tools/build-qemu install
+#	@ echo ""
+#	@ echo " CLEAN	tools/build-qemu tools/qemu-1.2.2"
+#	@ rm -rf tools/build-qemu tools/qemu-1.2.2	
 
 clean-tools:
 	@ echo ""

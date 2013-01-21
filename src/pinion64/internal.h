@@ -379,11 +379,13 @@ struct tcb {
 
 	// waiting thread information
 	// valid if TCB_STATE_WAITING or TCB_STATE_SUSPENDEDWAITING
-	uint16_t wait_type;     // (offset 0x0C)
-	uint16_t wait_evset_id; // (offset 0x0E)
+//	uint16_t wait_type;     // (offset 0x0C)
+//	uint16_t wait_evset_id; // (offset 0x0E)
+
+	uint16_t wait_event[6];
 
 	// reserved for future use
-	uint64_t reserved1[3];
+	uint64_t reserved1[2];
 
 	// next TCB in scheduler or waitlist
 	struct tcb *next;

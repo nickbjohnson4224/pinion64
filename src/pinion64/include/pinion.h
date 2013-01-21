@@ -31,10 +31,17 @@ extern const char *__PINION_implementation;
 // Threading
 //
 
+#define __PINION_THREAD_ID_SELF -1
+
 typedef uint32_t __PINION_thread_id;
 
 struct __PINION_thread_state {
 
+	// event waiting state
+
+	// register states
+
+	// general-purpose registers
 	uint64_t rax;
 	uint64_t rcx;
 	uint64_t rbx;
@@ -52,18 +59,25 @@ struct __PINION_thread_state {
 	uint64_t r14;
 	uint64_t r15;
 
+	// instruction pointer
 	uint64_t rip;
 
+	// segment registers (readonly)
 	uint64_t fs;
 	uint64_t gs;
 	uint64_t cs;
 	uint64_t ss;
 	uint64_t ds;
 
+	// extended (SSE/AVX) registers
+	uint8_t xstate[512];
+
 } __attribute__((packed));
 
 void __PINION_thread_yield(void);
 __PINION_thread_id __PINION_thread_create(const struct __PINION_thread_state *state);
+bool __PINION_thread_pause (__PINION_thread_id thread);
+bool __PINION_thread_resume(__PINION_thread_id thread);
 void __PINION_thread_exit(void);
 
 //

@@ -31,33 +31,49 @@ void stuff() {
 
 	puts("happy birthday!\n");
 
-	for(;;) {
-//		for (volatile int i = 0; i < 1000; i++);
-		puts("c");
-	}
+	for (volatile int i = 0; i < 50000000; i++);
+
+	puts("goodnight!\n");
+
+	__PINION_thread_exit();
+
+	for (;;);
 }
 
-static uint8_t stackspace[1024];
+//static uint8_t stackspace[1024];
 
 int main() {
 
 	puts("hello, world!\n");
 
-	struct __PINION_thread_state proto = {
+/*	struct __PINION_thread_state proto = {
 		.rip = (uintptr_t) stuff,
 		.rsp = (uintptr_t) &stackspace[1008]
 	};
 
-	__PINION_thread_create(&proto);
+	__PINION_thread_id child = __PINION_thread_create(&proto);
 
-	proto.rsp = (uintptr_t) &stackspace[500];
+	while (1) {
 
-	__PINION_thread_create(&proto);
+		for (volatile int i = 0; i < 100000000; i++);
 
-	for(;;) {
-//		for (volatile int i = 0; i < 1000; i++);
-		puts("p");
-	}
+		__PINION_thread_pause(child);
+
+		for (volatile int i = 0; i < 100000000; i++);
+
+		__PINION_thread_resume(child);
+
+	} */
+
+	__PINION_thread_yield();
+
+	__PINION_thread_pause(__PINION_THREAD_ID_SELF);
+
+	puts("herp derp\n");
+
+	__PINION_thread_exit();
+
+	for(;;);
 
 	return 0;
 }
