@@ -154,14 +154,14 @@ bool apilogic_thread_set_tap(__PINION_tap_index index, __PINION_interrupt_vector
 	// remove old tap
 	if (tcb->tap[index] & 0x3FFF) {
 		// remove old interrupt route
-		interrupt_vector_remove(tcb, tcb->tap[index]);
+		interrupt_remove_route(tcb, tcb->tap[index]);
 	}
 
 	// insert new tap
 	tcb->tap[index] = vec;
 
 	// add new interrupt route
-	interrupt_vector_add(tcb, tcb->tap[index]);
+	interrupt_add_route(tcb, tcb->tap[index]);
 	interrupt_vector_reset(tcb->tap[index]);
 
 	return true;

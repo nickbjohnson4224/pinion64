@@ -437,9 +437,17 @@ void scheduler_schedule();
 // interrupt routing 
 //
 
-void interrupt_vector_add   (struct tcb *tcb, uint16_t vec);
-void interrupt_vector_remove(struct tcb *tcb, uint16_t vec);
-void interrupt_vector_reset (uint16_t vec);
-void interrupt_vector_fire  (uint16_t vec);
+struct interrupt_vector_page_vtable {
+	void (*on_reset)(uint16_t vec);
+	void (*on_fire) (uint16_t vec);
+};
+
+void interrupt_add_vector_page(uint16_t vec_base,
+	const struct interrupt_vector_page_vtable *vtable);
+
+void interrupt_add_route   (struct tcb *tcb, uint16_t vec);
+void interrupt_remove_route(struct tcb *tcb, uint16_t vec);
+void interrupt_vector_reset(uint16_t vec);
+void interrupt_vector_fire (uint16_t vec);
 
 #endif//__PINION64_INTERNAL_H

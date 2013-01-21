@@ -20,33 +20,54 @@ struct interrupt_route {
 	struct tcb *tap[4];
 };
 
-struct interrupt_route irq_route[128];
+struct interrupt_vector_page {
+	struct interrupt_route *route;
+	const struct interrupt_vector_page_vtable *vtable;
+};
 
-void interrupt_vector_add(struct tcb *tcb, uint16_t vec) {
-	
-	if ((vec & 0xFF80) == 0x0100) {
-		// IRQ route
+static struct interrupt_vector_page interrupt_vector_page_table[128];
 
-		// install route
-		for (size_t i = 0; i < 4; i++) {
-			if (irq_route[vec & 0x7F].tap[i] == NULL) {
-				irq_route[vec & 0x7F].tap[i] = tcb;
-				break;
-			}
+void interrupt_add_vector_page(uint16_t vec_base, const struct interrupt_vector_page_vtable *vtable) {
+
+	interrupt_vector_page_table[vec_base >> 7].route = pge_alloc();
+	interrupt_vector_page_table[vec_base >> 7].vtable = vtable;
+
+	for (size_t i = 0; i < 128; i++) {
+		for (size_t j = 0; j < 4; j++) {
+			interrupt_vector_page_table[vec_base >> 7].route[i].tap[j] = NULL;
 		}
 	}
 }
 
-void interrupt_vector_remove(struct tcb *tcb, uint16_t vec) {
+void interrupt_add_route(struct tcb *tcb, uint16_t vec) {
 
-	if ((vec & 0xFF80) == 0x0100) {
-		// IRQ route
+	if (interrupt_vector_page_table[vec >> 7].route) {
+		struct interrupt_vector_page *page = 
+			&interrupt_vector_page_table[vec >> 7];
 
-		// remove route
+		// install route
 		for (size_t i = 0; i < 4; i++) {
-			if (irq_route[vec & 0x7F].tap[i] == tcb) {
-				irq_route[vec & 0x7F].tap[i] = NULL;
-				break;
+			if (!page->route[vec & 0x7F].tap[i]) {
+				page->route[vec & 0x7F].tap[i] = tcb;
+				return;
+			}
+		}
+
+		// route could not be installed
+		log(ERROR, "too many routes for vector %x", vec);
+	}
+}
+
+void interrupt_remove_route(struct tcb *tcb, uint16_t vec) {
+
+	if (interrupt_vector_page_table[vec >> 7].route) {
+		struct interrupt_vector_page *page =
+			&interrupt_vector_page_table[vec >> 7];
+
+		for (size_t i = 0; i < 4; i++) {
+			if (page->route[vec & 0x7F].tap[i] == tcb) {
+				page->route[vec & 0x7F].tap[i] = NULL;
+				return;
 			}
 		}
 	}
@@ -54,41 +75,53 @@ void interrupt_vector_remove(struct tcb *tcb, uint16_t vec) {
 
 void interrupt_vector_reset(uint16_t vec) {
 	
-	if ((vec & 0xFF80) == 0x0100) {
-		// IRQ vector
+	if (interrupt_vector_page_table[vec >> 7].route) {
+		struct interrupt_vector_page *page =
+			&interrupt_vector_page_table[vec >> 7];
 
-		// TODO enable IRQ
+		if (page->vtable && page->vtable->on_reset) {
+			page->vtable->on_reset(vec);
+		}
 	}
 }
 
 void interrupt_vector_fire(uint16_t vec) {
 
-	if ((vec & 0xFF80) == 0x0100) {
-		// IRQ vector
+	if (interrupt_vector_page_table[vec >> 7].route) {
+		struct interrupt_vector_page *page =
+			&interrupt_vector_page_table[vec >> 7];
 
-		// TODO disable IRQ
+		if (page->vtable && page->vtable->on_fire) {
+			page->vtable->on_fire(vec);
+		}
 
 		// notify taps
 		for (size_t i = 0; i < 4; i++) {
-			if (irq_route[vec & 0x7F].tap[i]) {
-				struct tcb *tcb = irq_route[vec & 0x7F].tap[i];
+			struct tcb *tcb = page->route[vec & 0x7F].tap[i];
+			if (!tcb) continue;
 
-				for (size_t i = 0; i < 4; i++) {
-					if ((tcb->tap[i] & 0x3FFF) == vec) {
-						tcb->tap[i] |= 0x8000;
-						if (tcb->state == TCB_STATE_WAITING) {
-							scheduler_add_tcb(tcb);
-							tcb->state = TCB_STATE_QUEUED;
-							tcb->rax = vec;
-							scheduler_schedule();
-						}
-						else if (tcb->state == TCB_STATE_SUSPENDEDWAITING) {
-							tcb->state = TCB_STATE_SUSPENDED;
-							tcb->rax = vec;
-						}
-						break;
-					}
+			for (size_t j = 0; j < 4; j++) {
+				if ((tcb->tap[j] & 0x3FFF) != vec) continue;
+
+				// set interrupt fired flag
+				tcb->tap[j] |= 0x8000;
+
+				switch (tcb->state) {
+				case TCB_STATE_WAITING:
+
+					scheduler_add_tcb(tcb);
+					tcb->state = TCB_STATE_QUEUED;
+					tcb->rax = vec;
+					break;
+
+				case TCB_STATE_SUSPENDEDWAITING:
+
+					tcb->state = TCB_STATE_SUSPENDED;
+					tcb->rax = vec;
+					break;
 				}
+
+				break;
 			}
 		}
 	}

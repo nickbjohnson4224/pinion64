@@ -64,6 +64,16 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 	}
 }
 
+static struct interrupt_vector_page_vtable irq_vector_page_vtable;
+
+static void irq_on_fire(uint16_t vec) {
+	log(DEBUG, "irq %d fired", vec & 0x7F);
+}
+
+static void irq_on_reset(uint16_t vec) {
+	log(DEBUG, "irq %d reset", vec & 0x7F);
+}
+
 void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mmap *memory_map) {
 
 	// initialize the physical memory manager
@@ -93,6 +103,11 @@ void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mm
 	ccb->lapic->timer_initial_count        = 100000; // roughly 1 KHz
 	ccb->lapic->lvt_timer                  = 32 | 0x20000;
 	ccb->lapic->timer_divide_configuration = 3; // 16
+
+	// initialize interrupt routes
+	irq_vector_page_vtable.on_fire = irq_on_fire;
+	irq_vector_page_vtable.on_reset = irq_on_reset;
+	interrupt_add_vector_page(0x0100, &irq_vector_page_vtable);
 
 	// allocate initial thread TCB and add to scheduler
 	scheduler_add_tcb(tcb_new());
