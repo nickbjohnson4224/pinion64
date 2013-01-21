@@ -45,11 +45,7 @@ bool apilogic_thread_pause(__PINION_thread_id thread) {
 		thread = ccb->active_tcb->id;
 	}
 
-	log(DEBUG, "pause %d", thread);
-
 	struct tcb *tcb = tcb_get(thread);
-
-	log(DEBUG, "tcb: %p %d", tcb, tcb->state);
 
 	if (!tcb) {
 		return false;
@@ -104,11 +100,7 @@ bool apilogic_thread_resume(__PINION_thread_id thread) {
 		thread = ccb->active_tcb->id;
 	}
 
-	log(DEBUG, "resume %d", thread);
-
 	struct tcb *tcb = tcb_get(thread);
-
-	log(DEBUG, "tcb: %p %d", tcb, tcb->state);
 
 	if (!tcb) {
 		return false;
@@ -142,4 +134,82 @@ void apilogic_thread_exit(void) {
 	struct ccb *ccb = ccb_get_self();
 
 	ccb->active_tcb->state = TCB_STATE_ZOMBIE;
+
+	// TODO add to zombie queue
+}
+
+bool apilogic_thread_set_tap(__PINION_tap_index index, __PINION_interrupt_vector vec) {
+	struct tcb *tcb = ccb_get_self()->active_tcb;
+
+	if (index >= 4) {
+		// tap index too large
+		return false;
+	}
+
+	if (vec & 0xC000) {
+		// vector invalid
+		return false;
+	}
+
+	// remove old tap
+	if (tcb->tap[index] & 0x3FFF) {
+		// remove old interrupt route
+		interrupt_vector_remove(tcb, tcb->tap[index]);
+	}
+
+	// insert new tap
+	tcb->tap[index] = vec;
+
+	// add new interrupt route
+	interrupt_vector_add(tcb, tcb->tap[index]);
+	interrupt_vector_reset(tcb->tap[index]);
+
+	return true;
+}
+
+__PINION_interrupt_vector apilogic_thread_get_tap(__PINION_tap_index index) {
+	struct tcb *tcb = ccb_get_self()->active_tcb;
+
+	if (index >= 4) {
+		// tap index too large
+		return 0x0000;
+	}
+
+	return tcb->tap[index];	
+}
+
+void apilogic_thread_reset(__PINION_interrupt_vector vec) {
+	struct tcb *tcb = ccb_get_self()->active_tcb;
+	
+	__PINION_tap_index i;
+	for (i = 0; i < 4; i++) {
+		if ((tcb->tap[i] &~ 0xC000) == vec) {
+			break;
+		}
+	}
+
+	if (i == 4) {
+		// untapped vector
+		return;
+	}
+
+	// reset local tap state
+	tcb->tap[i] &= ~0x8000;
+
+	// TODO reset global vector state
+	interrupt_vector_reset(vec);
+}
+
+__PINION_interrupt_vector apilogic_thread_wait(void) {
+	struct tcb *tcb = ccb_get_self()->active_tcb;
+
+	for (__PINION_tap_index i = 0; i < 4; i++) {
+		if (tcb->tap[i] & 0x8000) {
+			// tap already registered an interrupt, don't actually wait
+			return tcb->tap[i] &~ 0x8000;
+		}
+	}
+
+	tcb->state = TCB_STATE_WAITING;
+	return 0; // will be patched to the correct vector
 }

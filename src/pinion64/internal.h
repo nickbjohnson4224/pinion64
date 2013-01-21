@@ -137,10 +137,6 @@ void      pcx_switch(uint64_t *pcx);
 void *pmm_vaddr(uint64_t paddr);
 
 //
-// event sets
-//
-
-//
 // processors / CCB
 //
 
@@ -376,13 +372,11 @@ struct tcb {
 
 	// valid if TCB_STATE_RUNNING
 	uint32_t running_cpu; // (offset 0x08)
+	uint32_t reserved2;
 
 	// waiting thread information
 	// valid if TCB_STATE_WAITING or TCB_STATE_SUSPENDEDWAITING
-//	uint16_t wait_type;     // (offset 0x0C)
-//	uint16_t wait_evset_id; // (offset 0x0E)
-
-	uint16_t wait_event[6];
+	uint16_t tap[4];
 
 	// reserved for future use
 	uint64_t reserved1[2];
@@ -438,5 +432,14 @@ struct tcb *tcb_get(uint32_t thread_id);
 void scheduler_add_tcb(struct tcb *tcb);
 int  scheduler_rem_tcb(struct tcb *tcb);
 void scheduler_schedule();
+
+//
+// interrupt routing 
+//
+
+void interrupt_vector_add   (struct tcb *tcb, uint16_t vec);
+void interrupt_vector_remove(struct tcb *tcb, uint16_t vec);
+void interrupt_vector_reset (uint16_t vec);
+void interrupt_vector_fire  (uint16_t vec);
 
 #endif//__PINION64_INTERNAL_H

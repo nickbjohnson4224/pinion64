@@ -53,6 +53,7 @@
 		call apilogic_%1
 		pop rsp
 		swapgs
+		sti
 
 		; 0 - yield if suspended or zombie
 		; 1 - yield if preempted
@@ -60,7 +61,6 @@
 
 		mov rdi, %2 
 		int 0xFF
-		sti
 		ret
 
 %endmacro
@@ -72,6 +72,15 @@ apifunc_then_yield thread_create, 1
 apifunc_then_yield thread_pause, 0
 apifunc_then_yield thread_resume, 1
 apifunc_then_yield thread_exit, 0
+
+; interrupt API --------------------------------------------------------------
+
+apifunc thread_set_tap
+apifunc thread_get_tap
+apifunc thread_reset
+apifunc_then_yield thread_wait, 0
+
+; fault handling API ---------------------------------------------------------
 
 ; paging API -----------------------------------------------------------------
 

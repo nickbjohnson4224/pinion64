@@ -28,6 +28,30 @@ extern const int __PINION_api_minor;
 extern const char *__PINION_implementation;
 
 //
+// Interrupts
+//
+
+#define __PINION_INTERRUPT_VECTOR_NULL      0x0000
+#define __PINION_INTERRUPT_VECTOR_IRQ(n)    (0x0100 + (n))
+
+typedef uint16_t __PINION_interrupt_vector;
+
+#define __PINION_TAP_COUNT 4
+
+typedef uint8_t __PINION_tap_index;
+
+bool __PINION_thread_set_tap(
+	__PINION_tap_index index, 
+	__PINION_interrupt_vector vec);
+
+__PINION_interrupt_vector __PINION_thread_get_tap(
+	__PINION_tap_index index);
+
+void __PINION_thread_reset(__PINION_interrupt_vector vec);
+
+__PINION_interrupt_vector __PINION_thread_wait(void);
+
+//
 // Threading
 //
 
@@ -37,7 +61,14 @@ typedef uint32_t __PINION_thread_id;
 
 struct __PINION_thread_state {
 
-	// event waiting state
+	// interrupt taps
+	__PINION_interrupt_vector tap[__PINION_TAP_COUNT];
+	uint64_t tap_state;
+
+	// fault information
+	uint64_t fault_type;
+	uint64_t fault_address;
+	uint64_t fault_ext[2];
 
 	// register states
 
@@ -70,6 +101,7 @@ struct __PINION_thread_state {
 	uint64_t ds;
 
 	// extended (SSE/AVX) registers
+	// TODO figure out internal structure
 	uint8_t xstate[512];
 
 } __attribute__((packed));

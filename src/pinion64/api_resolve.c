@@ -44,6 +44,12 @@ uint64_t api_resolve(const char *symbol) {
 	APICATCH(thread_pause);
 	APICATCH(thread_resume);
 	APICATCH(thread_exit);
+
+	APICATCH(thread_set_tap);
+	APICATCH(thread_get_tap);
+	APICATCH(thread_reset);
+	APICATCH(thread_wait);
+
 	APICATCH(page_set);
 	APICATCH(page_get);
 

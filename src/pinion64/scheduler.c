@@ -73,6 +73,8 @@ int scheduler_rem_tcb(struct tcb *tcb) {
 	return 1;
 }
 
+static struct tcb idle_tcb;
+
 void scheduler_schedule(void) {
 
 	// unload current TCB
@@ -90,8 +92,8 @@ void scheduler_schedule(void) {
 		ccb_load_tcb(new_tcb);
 	}
 	else {
-		log(DEBUG, "idling");
-		ccb_get_self()->lapic->lvt_timer = 0;
+		// inject idle TCB
+		ccb_load_tcb(&idle_tcb);
 		extern void idle();
 		idle();
 	}

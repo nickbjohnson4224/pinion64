@@ -20,7 +20,7 @@ void puts(const char *s) {
 void putx(uint64_t x) {
 	const char *digit = "0123456789ABCDEF";
 
-	for (int i = 16; i >= 0; i--) {
+	for (int i = 15; i >= 0; i--) {
 		putchar(digit[(x >> (4 * i)) & 0xF]);
 	}
 }
@@ -40,40 +40,38 @@ void stuff() {
 	for (;;);
 }
 
-//static uint8_t stackspace[1024];
+void irqlistener() {
+	
+	__PINION_thread_set_tap(0, 0x100);
+	__PINION_thread_set_tap(1, 0x101);
+	__PINION_thread_set_tap(2, 0x102);
+	__PINION_thread_set_tap(3, 0x103);
 
-int main() {
+	while (1) {
+		__PINION_interrupt_vector v = __PINION_thread_wait();
+
+		puts("got IRQ: ");
+		putx(v);
+		puts("\n");
+
+		__PINION_thread_reset(v);
+	}
+
+	__PINION_thread_exit();
+}
+
+static uint8_t stackspace[1024];
+
+void main() {
 
 	puts("hello, world!\n");
 
-/*	struct __PINION_thread_state proto = {
-		.rip = (uintptr_t) stuff,
+	struct __PINION_thread_state proto = {
+		.rip = (uintptr_t) irqlistener,
 		.rsp = (uintptr_t) &stackspace[1008]
 	};
 
-	__PINION_thread_id child = __PINION_thread_create(&proto);
-
-	while (1) {
-
-		for (volatile int i = 0; i < 100000000; i++);
-
-		__PINION_thread_pause(child);
-
-		for (volatile int i = 0; i < 100000000; i++);
-
-		__PINION_thread_resume(child);
-
-	} */
-
-	__PINION_thread_yield();
-
-	__PINION_thread_pause(__PINION_THREAD_ID_SELF);
-
-	puts("herp derp\n");
+	__PINION_thread_create(&proto);
 
 	__PINION_thread_exit();
-
-	for(;;);
-
-	return 0;
 }

@@ -23,14 +23,19 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 	if (tcb->ivect == 32) {
 		ccb->lapic->eoi = 0;
 
+		static int i = 0;
+		i++;
+		if ((i & 0x3FF) == 0) {
+			interrupt_vector_fire(0x101);
+		}
+
 		scheduler_schedule();
 
 		return;
 	}
 
 	if (tcb->ivect == 0x100) {
-		log(DEBUG, "yield %d", tcb->rdi);
-		
+	
 		if (tcb->rdi == 0 && tcb->state != TCB_STATE_RUNNING) {
 			ccb_unload_tcb();
 		}
