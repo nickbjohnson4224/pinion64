@@ -23,19 +23,13 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 	if (tcb->ivect == 32) {
 		ccb->lapic->eoi = 0;
 
-		static int i = 0;
-		i++;
-		if ((i & 0x3FF) == 0) {
-			interrupt_vector_fire(0x101);
-		}
-
 		scheduler_schedule();
 
 		return;
 	}
 
 	if (tcb->ivect == 0x100) {
-	
+
 		if (tcb->rdi == 0 && tcb->state != TCB_STATE_RUNNING) {
 			ccb_unload_tcb();
 		}
@@ -45,33 +39,64 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 		return;
 	}
 
-	log(ERROR, "fault caught: %p %d %p", tcb, tcb->ivect, tcb->rip);
-
 	if (tcb->ivect == 14) {
 		extern uint64_t read_cr2(void);
 		log(ERROR, "page fault at addr %p", read_cr2());
 		log(ERROR, "translation: %p %p", pcx_get_trans(NULL, read_cr2()), pcx_get_flags(NULL, read_cr2()));
+
+		queue_pagefault(ccb_unload_tcb());
+		interrupt_vector_fire(0x0080);
+		scheduler_schedule();
+		return;
 	}
 
 	if (tcb->ivect == 8) {
-		log(ERROR, "unhandled interrupt");
+		log(ERROR, "PANIC: double fault");
 		for(;;);
 	}
 
 	if (tcb->ivect < 32) {
-		log(ERROR, "unhandled fault");
-		for(;;);
+		queue_miscfault(ccb_unload_tcb());
+		interrupt_vector_fire(0x0081);
+		scheduler_schedule();
+		return;
 	}
 }
 
 static struct interrupt_vector_page_vtable irq_vector_page_vtable;
+static struct interrupt_vector_page_vtable pinion_vector_page_vtable;
 
 static void irq_on_fire(uint16_t vec) {
 	log(DEBUG, "irq %d fired", vec & 0x7F);
+
+	// TODO disable IRQ
 }
 
 static void irq_on_reset(uint16_t vec) {
 	log(DEBUG, "irq %d reset", vec & 0x7F);
+
+	// TODO enable IRQ
+}
+
+static void pinion_on_reset(uint16_t vec) {
+	
+	switch (vec & 0x7F) {
+	case 0: // pagefault
+		if (has_pagefault()) {
+			interrupt_vector_fire(vec);
+		}
+		break;
+	case 1: // miscfault
+		if (has_miscfault()) {
+			interrupt_vector_fire(vec);
+		}
+		break;
+	case 2: // zombie
+		if (has_zombie()) {
+			interrupt_vector_fire(vec);
+		}
+		break;
+	}
 }
 
 void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mmap *memory_map) {
@@ -105,6 +130,12 @@ void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mm
 	ccb->lapic->timer_divide_configuration = 3; // 16
 
 	// initialize interrupt routes
+
+	// pinion (pagefault, zombie, etc.) interrupt vector page
+	pinion_vector_page_vtable.on_reset = pinion_on_reset;
+	interrupt_add_vector_page(0x0080, &pinion_vector_page_vtable);
+
+	// IRQ interrupt vector page
 	irq_vector_page_vtable.on_fire = irq_on_fire;
 	irq_vector_page_vtable.on_reset = irq_on_reset;
 	interrupt_add_vector_page(0x0100, &irq_vector_page_vtable);
@@ -117,4 +148,6 @@ void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mm
 
 	// load kernel image
 	load_kernel(object_list);
+
+	log(DEBUG, "%p", ccb_get_self()->active_tcb);
 }

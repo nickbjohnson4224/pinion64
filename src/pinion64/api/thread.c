@@ -135,7 +135,8 @@ void apilogic_thread_exit(void) {
 
 	ccb->active_tcb->state = TCB_STATE_ZOMBIE;
 
-	// TODO add to zombie queue
+	queue_zombie(ccb->active_tcb);
+	interrupt_vector_fire(0x0082);
 }
 
 bool apilogic_thread_set_tap(__PINION_tap_index index, __PINION_interrupt_vector vec) {

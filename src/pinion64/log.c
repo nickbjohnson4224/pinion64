@@ -32,7 +32,7 @@ static void logputp(uint64_t p);
 void log(int level, const char *fmt, ...) {
 	va_list ap;
 
-	if (level < DEBUG) return;
+//	if (level < DEBUG) return;
 
 	switch (level) {
 	case INFO:  logputs("[info]  "); break;

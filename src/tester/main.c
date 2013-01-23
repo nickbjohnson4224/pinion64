@@ -25,27 +25,12 @@ void putx(uint64_t x) {
 	}
 }
 
-const char *string = "foobar\n";
-
-void stuff() {
-
-	puts("happy birthday!\n");
-
-	for (volatile int i = 0; i < 50000000; i++);
-
-	puts("goodnight!\n");
-
-	__PINION_thread_exit();
-
-	for (;;);
-}
-
 void irqlistener() {
 	
-	__PINION_thread_set_tap(0, 0x100);
-	__PINION_thread_set_tap(1, 0x101);
-	__PINION_thread_set_tap(2, 0x102);
-	__PINION_thread_set_tap(3, 0x103);
+	__PINION_thread_set_tap(0, 0x0100);
+	__PINION_thread_set_tap(1, 0x0101);
+	__PINION_thread_set_tap(2, 0x0102);
+	__PINION_thread_set_tap(3, 0x0103);
 
 	while (1) {
 		__PINION_interrupt_vector v = __PINION_thread_wait();
@@ -60,18 +45,34 @@ void irqlistener() {
 	__PINION_thread_exit();
 }
 
-static uint8_t stackspace[1024];
+void pager() {
+
+	__PINION_thread_set_tap(0, 0x0080);
+
+	__PINION_thread_wait();
+
+	puts("got page fault\n");
+
+	for(;;);
+}
+
+//static uint8_t stackspace[1024];
 
 void main() {
 
 	puts("hello, world!\n");
 
-	struct __PINION_thread_state proto = {
-		.rip = (uintptr_t) irqlistener,
-		.rsp = (uintptr_t) &stackspace[1008]
-	};
+	for(;;);
 
-	__PINION_thread_create(&proto);
+//	struct __PINION_thread_state proto = { .rip = 0 };
+
+//	proto.rip = (uintptr_t) irqlistener;
+//	proto.rsp = (uintptr_t) &stackspace[1008];
+//	__PINION_thread_create(&proto);
+
+//	proto.rip = (uintptr_t) pager;
+//	proto.rsp = (uintptr_t) &stackspace[500];
+//	__PINION_thread_create(&proto);
 
 	__PINION_thread_exit();
 }

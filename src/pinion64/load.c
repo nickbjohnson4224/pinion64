@@ -262,6 +262,8 @@ static void fixup_kernel(uint64_t kernel_base, struct elf64_dyn *dynamic) {
 	if (d.jmprel) {
 		log(INFO, "JMPREL at %p; %d entries", d.jmprel, d.jmprelsz / d.relent);
 
+	log(DEBUG, "");
+
 		for (size_t i = 0; i < d.jmprelsz; i += d.relent) {
 			relocate(kernel_base, &d, (const void*) ((uintptr_t) d.jmprel + i));
 		}

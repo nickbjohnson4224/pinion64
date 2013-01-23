@@ -15,6 +15,7 @@
 #ifndef __PINION64_INTERNAL_H
 #define __PINION64_INTERNAL_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -449,5 +450,19 @@ void interrupt_add_route   (struct tcb *tcb, uint16_t vec);
 void interrupt_remove_route(struct tcb *tcb, uint16_t vec);
 void interrupt_vector_reset(uint16_t vec);
 void interrupt_vector_fire (uint16_t vec);
+
+//
+// faults and zombies
+//
+
+bool has_pagefault(void);
+bool has_miscfault(void);
+bool has_zombie   (void);
+struct tcb *get_pagefault(void);
+struct tcb *get_miscfault(void);
+struct tcb *get_zombie   (void);
+void queue_pagefault(struct tcb *tcb);
+void queue_miscfault(struct tcb *tcb);
+void queue_zombie   (struct tcb *tcb);
 
 #endif//__PINION64_INTERNAL_H
