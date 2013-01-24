@@ -113,6 +113,14 @@ bool __PINION_thread_resume(__PINION_thread_id thread);
 void __PINION_thread_exit(void);
 
 //
+// Fault handling
+//
+
+__PINION_thread_id __PINION_thread_get_pagefault(void);
+__PINION_thread_id __PINION_thread_get_miscfault(void);
+__PINION_thread_id __PINION_thread_get_zombie(void);
+
+//
 // Paging
 //
 

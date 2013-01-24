@@ -197,7 +197,7 @@ void apilogic_thread_reset(__PINION_interrupt_vector vec) {
 	// reset local tap state
 	tcb->tap[i] &= ~0x8000;
 
-	// TODO reset global vector state
+	// reset global vector state
 	interrupt_vector_reset(vec);
 }
 
@@ -213,4 +213,37 @@ __PINION_interrupt_vector apilogic_thread_wait(void) {
 
 	tcb->state = TCB_STATE_WAITING;
 	return 0; // will be patched to the correct vector
+}
+
+__PINION_thread_id apilogic_thread_get_pagefault(void) {
+	struct tcb *tcb = get_pagefault();
+
+	if (tcb) {
+		return tcb->id;
+	}
+	else {
+		return 0;
+	}
+}
+
+__PINION_thread_id apilogic_thread_get_miscfault(void) {
+	struct tcb *tcb = get_miscfault();
+
+	if (tcb) {
+		return tcb->id;
+	}
+	else {
+		return 0;
+	}
+}
+
+__PINION_thread_id apilogic_thread_get_zombie(void) {
+	struct tcb *tcb = get_zombie();
+
+	if (tcb) {
+		return tcb->id;
+	}
+	else {
+		return 0;
+	}
 }

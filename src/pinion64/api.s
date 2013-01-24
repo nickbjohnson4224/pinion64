@@ -82,6 +82,10 @@ apifunc_then_yield thread_wait, 0
 
 ; fault handling API ---------------------------------------------------------
 
+apifunc thread_get_pagefault
+apifunc thread_get_miscfault
+apifunc thread_get_zombie
+
 ; paging API -----------------------------------------------------------------
 
 apifunc page_set

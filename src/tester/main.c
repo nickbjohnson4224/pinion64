@@ -51,28 +51,34 @@ void pager() {
 
 	__PINION_thread_wait();
 
-	puts("got page fault\n");
+	__PINION_thread_id thread = __PINION_thread_get_pagefault();
+
+	puts("got page fault from ");
+	putx(thread);
+	puts("\n");
 
 	for(;;);
 }
 
-//static uint8_t stackspace[1024];
+static uint8_t stackspace[1024];
 
 void main() {
 
 	puts("hello, world!\n");
 
-	for(;;);
+	struct __PINION_thread_state proto = { .rip = 0 };
 
-//	struct __PINION_thread_state proto = { .rip = 0 };
+	proto.rip = (uintptr_t) irqlistener;
+	proto.rsp = (uintptr_t) &stackspace[1008];
+	__PINION_thread_create(&proto);
 
-//	proto.rip = (uintptr_t) irqlistener;
-//	proto.rsp = (uintptr_t) &stackspace[1008];
-//	__PINION_thread_create(&proto);
+	proto.rip = (uintptr_t) pager;
+	proto.rsp = (uintptr_t) &stackspace[500];
+	__PINION_thread_create(&proto);
 
-//	proto.rip = (uintptr_t) pager;
-//	proto.rsp = (uintptr_t) &stackspace[500];
-//	__PINION_thread_create(&proto);
+	*((volatile int*) 0) = 0;
+
+	puts("I just don't know what went wrong...\n");
 
 	__PINION_thread_exit();
 }

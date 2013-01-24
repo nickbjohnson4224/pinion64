@@ -50,6 +50,10 @@ uint64_t api_resolve(const char *symbol) {
 	APICATCH(thread_reset);
 	APICATCH(thread_wait);
 
+	APICATCH(thread_get_pagefault);
+	APICATCH(thread_get_miscfault);
+	APICATCH(thread_get_zombie);
+
 	APICATCH(page_set);
 	APICATCH(page_get);
 
