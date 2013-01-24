@@ -148,6 +148,4 @@ void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mm
 
 	// load kernel image
 	load_kernel(object_list);
-
-	log(DEBUG, "%p", ccb_get_self()->active_tcb);
 }

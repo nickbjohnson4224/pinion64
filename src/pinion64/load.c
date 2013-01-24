@@ -222,7 +222,7 @@ static void fixup_kernel(uint64_t kernel_base, struct elf64_dyn *dynamic) {
 		.jmprel = NULL,
 		.relsz = 0,
 		.jmprelsz = 0,
-		.relent = 0,
+		.relent = 24,
 		.pltgot = NULL,
 	};
 
@@ -261,8 +261,6 @@ static void fixup_kernel(uint64_t kernel_base, struct elf64_dyn *dynamic) {
 	// perform relocations
 	if (d.jmprel) {
 		log(INFO, "JMPREL at %p; %d entries", d.jmprel, d.jmprelsz / d.relent);
-
-	log(DEBUG, "");
 
 		for (size_t i = 0; i < d.jmprelsz; i += d.relent) {
 			relocate(kernel_base, &d, (const void*) ((uintptr_t) d.jmprel + i));
