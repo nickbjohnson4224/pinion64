@@ -52,11 +52,15 @@
 // When multiple pagetable support is added, this needs to reference the 
 // current thread's pagetable instead of just the root one.
 
-bool apilogic_page_set(__PINION_virtaddr vbase, __PINION_virtaddr pbase, 
-	__PINION_pageflags flags, size_t size) {
+bool apilogic_page_set(
+	__PINION_virtaddr vbase,
+	__PINION_virtaddr pbase, 
+	__PINION_pageflags flags,
+	size_t size) {
 
 	// reject unaligned requests
-	if ((pbase & 0xFFF) || (vbase & 0xFFF) || (size & 0xFFF)) {
+	//if ((pbase & 0xFFF) || (vbase & 0xFFF) || (size & 0xFFF)) {
+	if ((pbase | vbase | size) & 0xFFF) {
 		return false;
 	}
 
@@ -88,55 +92,4 @@ bool apilogic_page_set(__PINION_virtaddr vbase, __PINION_virtaddr pbase,
 	}
 
 	return true;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// API function page_get
-//
-// Gets the virtual to physical mapping and page flags for a given virtual
-// address in the current thread's active page table.
-//
-// vaddr - virtual address
-//
-// Returns a structure containing the mapped-to physical address and the
-// effective page flags. This call cannot fail.
-//
-
-// TODO LIST
-//
-// When multiple pagetable support is added, this needs to reference the 
-// current thread's pagetable instead of just the root one.
-
-struct __PINION_page_content apilogic_page_get(__PINION_virtaddr vaddr) {
-
-	struct __PINION_page_content page = {
-	
-		// get virtual->physical translation
-		pcx_get_trans(NULL, vaddr),
-
-		// used for accumulating cooked page flags 
-		0
-	};
-
-	// get page flags
-	uint64_t raw_flags = pcx_get_flags(NULL, vaddr);
-
-	// convert page flags
-	if (raw_flags & PF_VALID) {
-		page.flags |= __PINION_PAGE_VALID;
-
-		if (raw_flags & PF_PRES) {
-			if (!(raw_flags & PF_NREAD)) page.flags |= __PINION_PAGE_READ;
-			if (raw_flags & PF_WRITE)    page.flags |= __PINION_PAGE_WRITE;
-			if (!(raw_flags & PF_NX))    page.flags |= __PINION_PAGE_EXEC;
-			if (raw_flags & PF_USER)     page.flags |= __PINION_PAGE_USER;
-			if (raw_flags & PF_PWT)      page.flags |= __PINION_PAGE_WRITE_THROUGH;
-			if (raw_flags & PF_PCD)      page.flags |= __PINION_PAGE_CACHE_DISABLE;
-		}
-
-		if (raw_flags & PF_ACCS)  page.flags |= __PINION_PAGE_ACCESSED;
-		if (raw_flags & PF_DIRTY) page.flags |= __PINION_PAGE_DIRTY;
-	}
-
-	return page;
 }
