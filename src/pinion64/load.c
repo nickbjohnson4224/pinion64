@@ -304,8 +304,10 @@ void load_kernel(struct unfold64_objl *objl) {
 		if (phdr->p_type == PT_LOAD || phdr->p_type == PT_DYNAMIC) {
 			log(INFO, "loading at %p size %d", kernel_base + phdr->p_vaddr, phdr->p_filesz);
 
-			pcx_set_frame(NULL, kernel_base + phdr->p_vaddr, 0x1000, 
-				pcx_get_trans(NULL, (uint64_t) pge_alloc()), PF_PRES | PF_WRITE | PF_GLOBL);
+			for (size_t offset = 0; offset < phdr->p_memsz; offset += 0x1000) {
+				pcx_set_frame(NULL, kernel_base + phdr->p_vaddr + offset, 0x1000, 
+					pcx_get_trans(NULL, (uint64_t) pge_alloc()), PF_PRES | PF_WRITE | PF_GLOBL);
+			}
 
 			memcpy((void*) (kernel_base + phdr->p_vaddr), 
 				(void*) ((uintptr_t) kernel + phdr->p_offset), phdr->p_filesz);

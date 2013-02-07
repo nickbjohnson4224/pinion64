@@ -33,6 +33,9 @@ extern const char *__PINION_implementation;
 
 #define __PINION_INTERRUPT_VECTOR_NULL      0x0000
 #define __PINION_INTERRUPT_VECTOR_IRQ(n)    (0x0100 + (n))
+#define __PINION_INTERRUPT_VECTOR_PAGEFAULT 0x0080
+#define __PINION_INTERRUPT_VECTOR_MISCFAULT 0x0081
+#define __PINION_INTERRUPT_VECTOR_ZOMBIE    0x0082
 
 typedef uint16_t __PINION_interrupt_vector;
 
@@ -70,10 +73,9 @@ struct __PINION_thread_state {
 	__PINION_interrupt_vector tap[__PINION_TAP_COUNT];
 	uint64_t tap_state;
 
-	// fault information
+	// fault information (readonly)
 	uint64_t fault_type;
 	uint64_t fault_address;
-	uint64_t fault_ext[2];
 
 	// register states
 
@@ -111,13 +113,14 @@ struct __PINION_thread_state {
 
 } __attribute__((packed));
 
-void 
-__PINION_thread_yield(void);
-
 __PINION_thread_id __PINION_thread_create(const struct __PINION_thread_state *state);
+void __PINION_thread_yield(void);
 bool __PINION_thread_pause (__PINION_thread_id thread);
+bool __PINION_thread_pull_state(__PINION_thread_id thread, struct __PINION_thread_state *state);
+bool __PINION_thread_push_state(__PINION_thread_id thread, const struct __PINION_thread_state *state);
 bool __PINION_thread_resume(__PINION_thread_id thread);
 void __PINION_thread_exit(void);
+bool __PINION_thread_reap(__PINION_thread_id thread);
 
 //
 // Fault handling
@@ -182,8 +185,5 @@ struct pinion_object_list {
 	uint32_t reserved;
 	struct pinion_object object[];
 } __attribute__((packed));
-
-const struct pinion_object_list *__PINION_get_object_list(void);
-const struct pinion_object *__PINION_get_object(const char *name);
 
 #endif//__PINION_H

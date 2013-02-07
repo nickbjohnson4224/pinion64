@@ -390,8 +390,9 @@ struct tcb {
 
 	// paging context
 	uint32_t pcx_id; // (offset 0x30)
-	uint32_t pcx_reserved; // (offset 0x34)
 
+	uint32_t fault_type; // (offset 0x34)
+	
 	// fault address (offset 0x38)
 	uint64_t fault_addr;
 

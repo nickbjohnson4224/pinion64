@@ -12,6 +12,7 @@
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+#include "../include/pinion.h"
 #include "internal.h"
 
 void debug_ptr(uint64_t ptr) {
@@ -41,11 +42,11 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 
 	if (tcb->ivect == 14) {
 		extern uint64_t read_cr2(void);
-		log(ERROR, "page fault at addr %p", read_cr2());
+		log(ERROR, "page fault at addr %p (ip %p, sp %p, id %d)", read_cr2(), tcb->rip, tcb->rsp, tcb->id);
 		log(ERROR, "translation: %p %p", pcx_get_trans(NULL, read_cr2()), pcx_get_flags(NULL, read_cr2()));
 
 		queue_pagefault(ccb_unload_tcb());
-		interrupt_vector_fire(0x0080);
+		interrupt_vector_fire(__PINION_INTERRUPT_VECTOR_PAGEFAULT);
 		scheduler_schedule();
 		return;
 	}
@@ -57,7 +58,7 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 
 	if (tcb->ivect < 32) {
 		queue_miscfault(ccb_unload_tcb());
-		interrupt_vector_fire(0x0081);
+		interrupt_vector_fire(__PINION_INTERRUPT_VECTOR_MISCFAULT);
 		scheduler_schedule();
 		return;
 	}

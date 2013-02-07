@@ -43,7 +43,10 @@ uint64_t api_resolve(const char *symbol) {
 	APICATCH(thread_create);
 	APICATCH(thread_pause);
 	APICATCH(thread_resume);
+	APICATCH(thread_pull_state);
+	APICATCH(thread_push_state);
 	APICATCH(thread_exit);
+	APICATCH(thread_reap);
 
 	APICATCH(interrupt_set_tap);
 	APICATCH(interrupt_get_tap);

@@ -72,6 +72,9 @@ apifunc_then_yield thread_create, 1
 apifunc_then_yield thread_pause, 0
 apifunc_then_yield thread_resume, 1
 apifunc_then_yield thread_exit, 0
+apifunc thread_reap
+apifunc thread_pull_state
+apifunc_then_yield thread_push_state, 1
 
 ; interrupt API --------------------------------------------------------------
 
@@ -90,6 +93,3 @@ apifunc thread_get_zombie
 
 apifunc page_set
 apifunc page_get
-;apifunc pagetable_create
-;apifunc pagetable_delete
-;apifunc pagetable_switch

@@ -15,11 +15,19 @@
 #include "../include/pinion.h"
 #include "../internal.h"
 
-void apilogic_thread_exit(void) {
-	struct ccb *ccb = ccb_get_self();
+bool apilogic_thread_reap(__PINION_thread_id thread) {
 
-	ccb->active_tcb->state = TCB_STATE_ZOMBIE;
+	struct tcb *tcb = tcb_get(thread);
 
-	queue_zombie(ccb->active_tcb);
-	interrupt_vector_fire(__PINION_INTERRUPT_VECTOR_ZOMBIE);
+	if (!tcb) {
+		return false;
+	}
+
+	if (tcb->state != TCB_STATE_ZOMBIE) {
+		return false;
+	}
+
+	tcb_del(tcb);
+
+	return true;
 }

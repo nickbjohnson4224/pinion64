@@ -15,39 +15,47 @@
 #include "../include/pinion.h"
 #include "../internal.h"
 
-__PINION_thread_id apilogic_thread_create(const struct __PINION_thread_state *proto) {
+bool apilogic_thread_push_state(__PINION_thread_id thread, const struct __PINION_thread_state *state) {
+	
+	// TODO 
+	// check if *state is properly backed by memory.
+	// we could crash pinion if bad pointers are passed.
 
-	struct tcb *new_tcb = tcb_new();
-
-	if (!new_tcb) {
-		return 0;
+	if (!state) {
+		return false;
 	}
 
-	// TODO add flags to ignore (for speed)
-	new_tcb->rax = proto->rax;
-	new_tcb->rcx = proto->rcx;
-	new_tcb->rbx = proto->rbx;
-	new_tcb->rdx = proto->rdx;
-	new_tcb->rdi = proto->rdi;
-	new_tcb->rsi = proto->rsi;
-	new_tcb->rbp = proto->rbp;
-	new_tcb->r8  = proto->r8;
-	new_tcb->r9  = proto->r9;
-	new_tcb->r10 = proto->r10;
-	new_tcb->r11 = proto->r11;
-	new_tcb->r12 = proto->r12;
-	new_tcb->r13 = proto->r13;
-	new_tcb->r14 = proto->r14;
-	new_tcb->r15 = proto->r15;
+	struct tcb *tcb = tcb_get(thread);
+
+	if (!tcb) {
+		return false;
+	}
+
+	if (tcb->state != TCB_STATE_SUSPENDED && tcb->state != TCB_STATE_SUSPENDEDWAITING) {
+		return false;
+	}
+
+	// load state
+	tcb->rax = state->rax;
+	tcb->rcx = state->rcx;
+	tcb->rbx = state->rbx;
+	tcb->rdx = state->rdx;
+	tcb->rdi = state->rdi;
+	tcb->rsi = state->rsi;
+	tcb->rbp = state->rbp;
+	tcb->r8  = state->r8;
+	tcb->r9  = state->r9;
+	tcb->r10 = state->r10;
+	tcb->r11 = state->r11;
+	tcb->r12 = state->r12;
+	tcb->r13 = state->r13;
+	tcb->r14 = state->r14;
+	tcb->r15 = state->r15;
+
+	tcb->rip = state->rip;
+	tcb->rsp = state->rsp;
 
 	// TODO load xstate
 	
-	// important stuff
-	new_tcb->state = TCB_STATE_QUEUED;
-	new_tcb->rip = proto->rip;
-	new_tcb->rsp = proto->rsp;
-
-	scheduler_add_tcb(new_tcb);
-
-	return new_tcb->id;
+	return true;
 }
