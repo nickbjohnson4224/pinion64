@@ -26,8 +26,14 @@ void putx(uint64_t x) {
 }
 
 void main() {
-
+	
+	__PINION_interrupt_set_tap(0, 0x0101);
+	
 	while (1) {
-		putchar('a');
+		__PINION_interrupt_wait();
+
+		puts("got interrupt\n");
+
+		__PINION_interrupt_reset(0x0101);
 	}
 }

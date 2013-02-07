@@ -1,27 +1,53 @@
 Things that need to be done before Pinion is fully usable:
 
+- fix tools
+	- switch to clang over GCC
+	- build each tool separately
+	- find way to distribute binaries
+	- cdrtools/genisoimage stuff
+	- detect host qemu installation
+
 + paging API
 	+ page_get (vaddr) -> (paddr, flags)
+		- document
 	+ page_set (vbase, pbase, flags, size)
+		- document
 
 + thread API
 	+ thread_yield
+		- document
 	+ thread_create (state) -> (thread)
+		- document
 	+ thread_exit ()
+		- document
 	+ thread_pause (thread)
-	+ thread_resume (thread)\
+		- document
+	+ thread_resume (thread)
+		- document
+	- thread_reap
+		- document
+	- thread_pull_state
+		- document
+	- thread_push_state
+		- document
 
 - error handing API
 	+ thread_get_pagefault
+		- document
 	+ thread_get_miscfault
+		- document
 	+ thread_get_zombie
-	- thread_reap
+		- document
 
 - hardware interrupt API
 	+ interrupt_set_tap
+		- document
 	+ interrupt_get_tap
+		- document
 	+ interrupt_wait
+		- document
 	+ interrupt_reset
+		- document
 	- actual interrupt routing
 	- proper IRQ to vector map
 
@@ -29,10 +55,14 @@ Things that need to be done before Pinion is fully usable:
 
 - physical memory map
 	- memory_map_read
+		- document
 
 - reading of configuration file for load parameters
 	- configuration parser
-	- leading at requested virtual address
+	- loading requested binary
+	- loading at requested virtual address
+	- placing stack at requested virtual address
+	- making stack requested size
 
 Things that need to be done for Pinion 1.0 release:
 

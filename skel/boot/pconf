@@ -1,7 +1,12 @@
 # pinion configuration
-pinion min-api 0.4
-logger serial level info
 
-# perform tests
-kernel /boot/tester base ffffffff00000000 stack ffffffff800000000
-object /boot/tconf export tester.conf
+# log to serial, minimum level DEBUG
+logger serial
+logger level debug
+
+# load /boot/tester (type elf64 with dynamic link API) at -4GB with stack at -2GB
+loader image   /boot/tester
+loader type    elf64
+loader apitype dynamic-link
+loader base    ffffffff00000000
+loader stack   ffffffff80000000

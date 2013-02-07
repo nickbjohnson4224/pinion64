@@ -40,16 +40,21 @@ typedef uint16_t __PINION_interrupt_vector;
 
 typedef uint8_t __PINION_tap_index;
 
-bool __PINION_thread_set_tap(
+bool 
+__PINION_interrupt_set_tap(
 	__PINION_tap_index index, 
 	__PINION_interrupt_vector vec);
 
-__PINION_interrupt_vector __PINION_thread_get_tap(
+__PINION_interrupt_vector 
+__PINION_interrupt_get_tap(
 	__PINION_tap_index index);
 
-void __PINION_thread_reset(__PINION_interrupt_vector vec);
+void 
+__PINION_interrupt_reset(
+	__PINION_interrupt_vector vec);
 
-__PINION_interrupt_vector __PINION_thread_wait(void);
+__PINION_interrupt_vector
+	__PINION_interrupt_wait(void);
 
 //
 // Threading
@@ -106,7 +111,9 @@ struct __PINION_thread_state {
 
 } __attribute__((packed));
 
-void __PINION_thread_yield(void);
+void 
+__PINION_thread_yield(void);
+
 __PINION_thread_id __PINION_thread_create(const struct __PINION_thread_state *state);
 bool __PINION_thread_pause (__PINION_thread_id thread);
 bool __PINION_thread_resume(__PINION_thread_id thread);

@@ -75,10 +75,10 @@ apifunc_then_yield thread_exit, 0
 
 ; interrupt API --------------------------------------------------------------
 
-apifunc thread_set_tap
-apifunc thread_get_tap
-apifunc thread_reset
-apifunc_then_yield thread_wait, 0
+apifunc interrupt_set_tap
+apifunc interrupt_get_tap
+apifunc interrupt_reset
+apifunc_then_yield interrupt_wait, 0
 
 ; fault handling API ---------------------------------------------------------
 
@@ -90,7 +90,6 @@ apifunc thread_get_zombie
 
 apifunc page_set
 apifunc page_get
-;apifunc page_set_ext
-;apifunc page_get_ext
 ;apifunc pagetable_create
 ;apifunc pagetable_delete
+;apifunc pagetable_switch
