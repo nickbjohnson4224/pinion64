@@ -39,12 +39,12 @@ Things that need to be done before Pinion is fully usable:
 + physical memory map
 	+ memory_map_read
 
-- reading of configuration file for load parameters
++ reading of configuration file for load parameters
 	+ configuration parser
-	- loading requested binary
-	- loading at requested virtual address
-	- placing stack at requested virtual address
-	- making stack requested size
+	+ loading requested binary
+	+ loading at requested virtual address
+	+ placing stack at requested virtual address
+	+ making stack requested size
 
 Things that need to be done for Pinion 1.0 release:
 

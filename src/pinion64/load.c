@@ -245,7 +245,6 @@ static void fixup_kernel(uint64_t kernel_base, struct elf64_dyn *dynamic) {
 	}
 
 	// check requested API revision
-	// TODO make sure is of the form libpinion.so.[0-9].[0-9]
 	const char *needed = &d.str[needed_off];
 	const char *match = "libpinion.so.";
 	
@@ -271,7 +270,12 @@ static void fixup_kernel(uint64_t kernel_base, struct elf64_dyn *dynamic) {
 void load_kernel(struct unfold64_objl *objl) {
 
 	// search for kernel
-	const char *kernel_name = "/boot/tester"; // TODO read configuration file
+	const char *kernel_name = config_read("loader", "image");
+
+	if (!kernel_name) {
+		log(ERROR, "no kernel image specified");
+		for(;;);
+	}
 
 	size_t i;
 	for (i = 0; i < objl->count; i++) {
@@ -295,7 +299,7 @@ void load_kernel(struct unfold64_objl *objl) {
 	}
 
 	// load kernel
-	uint64_t kernel_base = 0xFFFFFFFF00000000ULL; // TODO read configuration file
+	uint64_t kernel_base = config_read_as_ptr("loader", "base", 0xFFFFFFFF00000000ULL);
 	struct elf64_dyn *dynamic = NULL;
 
 	for (size_t i = 0; i < kernel->e_phnum; i++) {
@@ -323,7 +327,7 @@ void load_kernel(struct unfold64_objl *objl) {
 	fixup_kernel(kernel_base, dynamic);
 
 	// create kernel stack
-	uint64_t kernel_stack = 0xFFFFFFFF80000000ULL; // TODO read configuration file
+	uint64_t kernel_stack = config_read_as_ptr("loader", "stack", 0xFFFFFFFF80000000ULL);
 	pcx_set_frame(NULL, kernel_stack - 0x1000, 0x1000, 
 		pcx_get_trans(NULL, (uint64_t) pge_alloc()),
 		PF_PRES | PF_WRITE | PF_GLOBL);

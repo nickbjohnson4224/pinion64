@@ -111,6 +111,7 @@ static int strcmp(const char *a, const char *b) {
 
 void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mmap *memory_map) {
 
+	// parse configuration
 	for (size_t i = 0; i < object_list->count; i++) {
 		if (!strcmp(object_list->entry[i].name, "/boot/pconf")) {
 			config_parse((char*) object_list->entry[i].base);

@@ -9,4 +9,4 @@ loader image   /boot/tester
 loader type    elf64-pie
 loader apitype dynamic-link
 loader base    ffffffff00000000
-loader stack   ffffffff80000000
+loader stack   ffffffff00000000
