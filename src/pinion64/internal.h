@@ -66,6 +66,14 @@ void load_kernel(struct unfold64_objl *objl);
 void log(int level, const char *fmt, ...);
 
 //
+// configuration space
+//
+
+void config_parse(char *pconf);
+const char *config_read(const char *section, const char *property);
+uint64_t config_read_as_ptr(const char *section, const char *property, uint64_t sentinel);
+
+//
 // Pinion API
 //
 

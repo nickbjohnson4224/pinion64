@@ -1,12 +1,12 @@
 # pinion configuration
 
 # log to serial, minimum level DEBUG
-logger serial
-logger level debug
+logger device serial
+logger level  debug
 
 # load /boot/tester (type elf64 with dynamic link API) at -4GB with stack at -2GB
 loader image   /boot/tester
-loader type    elf64
+loader type    elf64-pie
 loader apitype dynamic-link
 loader base    ffffffff00000000
 loader stack   ffffffff80000000

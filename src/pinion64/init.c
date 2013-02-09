@@ -100,7 +100,23 @@ static void pinion_on_reset(uint16_t vec) {
 	}
 }
 
+static int strcmp(const char *a, const char *b) {
+	
+	while (*a && *b) {
+		if (*(a++) != *(b++)) return 1;
+	}
+
+	return 0;
+}
+
 void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mmap *memory_map) {
+
+	for (size_t i = 0; i < object_list->count; i++) {
+		if (!strcmp(object_list->entry[i].name, "/boot/pconf")) {
+			config_parse((char*) object_list->entry[i].base);
+			break;
+		}
+	}
 
 	// initialize the physical memory manager
 	pmm_init(memory_map);
