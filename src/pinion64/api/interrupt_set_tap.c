@@ -15,7 +15,7 @@
 #include "../include/pinion.h"
 #include "../internal.h"
 
-bool apilogic_interrupt_set_tap(__PINION_tap_index index, __PINION_interrupt_vector vec) {
+bool apilogic_interrupt_set_tap(__PINION_tap_index index, __PINION_interrupt_id vec) {
 	struct tcb *tcb = ccb_get_self()->active_tcb;
 
 	if (index >= 4) {

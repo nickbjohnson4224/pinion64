@@ -29,12 +29,6 @@ bool apilogic_thread_pause(__PINION_thread_id thread) {
 	}
 
 	switch (tcb->state) {
-	case TCB_STATE_ZOMBIE:
-
-		// zombies can only be reaped
-		return false;
-		break;
-
 	case TCB_STATE_SUSPENDED:
 	case TCB_STATE_SUSPENDEDWAITING:
 

@@ -15,10 +15,10 @@
 #include "../include/pinion.h"
 #include "../internal.h"
 
-__PINION_interrupt_vector apilogic_interrupt_get_tap(__PINION_tap_index index) {
+__PINION_interrupt_id apilogic_interrupt_get_tap(__PINION_tap_index index) {
 	struct tcb *tcb = ccb_get_self()->active_tcb;
 
-	if (index >= 4) {
+	if (index >= __PINION_TAP_COUNT) {
 		// tap index too large
 		return 0x0000;
 	}

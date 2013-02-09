@@ -18,8 +18,8 @@
 void apilogic_thread_exit(void) {
 	struct ccb *ccb = ccb_get_self();
 
-	ccb->active_tcb->state = TCB_STATE_ZOMBIE;
+	ccb->active_tcb->state = TCB_STATE_SUSPENDED;
 
 	queue_zombie(ccb->active_tcb);
-	interrupt_vector_fire(__PINION_INTERRUPT_VECTOR_ZOMBIE);
+	interrupt_vector_fire(__PINION_INTERRUPT_ZOMBIE);
 }

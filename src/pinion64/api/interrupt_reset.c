@@ -15,7 +15,7 @@
 #include "../include/pinion.h"
 #include "../internal.h"
 
-void apilogic_interrupt_reset(__PINION_interrupt_vector vec) {
+void apilogic_interrupt_reset(__PINION_interrupt_id vec) {
 	struct tcb *tcb = ccb_get_self()->active_tcb;
 	
 	__PINION_tap_index i;

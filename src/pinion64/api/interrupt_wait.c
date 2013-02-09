@@ -15,7 +15,7 @@
 #include "../include/pinion.h"
 #include "../internal.h"
 
-__PINION_interrupt_vector apilogic_interrupt_wait(void) {
+__PINION_interrupt_id apilogic_interrupt_wait(void) {
 	struct tcb *tcb = ccb_get_self()->active_tcb;
 
 	for (__PINION_tap_index i = 0; i < 4; i++) {

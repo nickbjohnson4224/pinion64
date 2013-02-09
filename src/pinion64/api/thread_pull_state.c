@@ -31,7 +31,7 @@ bool apilogic_thread_pull_state(__PINION_thread_id thread, struct __PINION_threa
 		return false;
 	}
 
-	if (tcb->state != TCB_STATE_SUSPENDED && tcb->state != TCB_STATE_SUSPENDEDWAITING && tcb->state != TCB_STATE_ZOMBIE) {
+	if (tcb->state != TCB_STATE_SUSPENDED && tcb->state != TCB_STATE_SUSPENDEDWAITING) {
 		return false;
 	}
 
@@ -60,18 +60,6 @@ bool apilogic_thread_pull_state(__PINION_thread_id thread, struct __PINION_threa
 	state->cs = tcb->cs;
 	state->ss = tcb->ss;
 	state->ds = tcb->ss;
-
-	for (size_t i = 0; i < __PINION_TAP_COUNT; i++) {
-
-		state->tap[i] = tcb->tap[i] &~ 0xC000;
-
-		if (tcb->tap[i] & 0x8000) {
-			state->tap_state |= (1 << i);
-		}
-	}
-
-	state->fault_type = tcb->fault_type;
-	state->fault_address = tcb->fault_addr;
 
 	// TODO copy xstate
 	

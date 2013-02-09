@@ -46,7 +46,7 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 		log(ERROR, "translation: %p %p", pcx_get_trans(NULL, read_cr2()), pcx_get_flags(NULL, read_cr2()));
 
 		queue_pagefault(ccb_unload_tcb());
-		interrupt_vector_fire(__PINION_INTERRUPT_VECTOR_PAGEFAULT);
+		interrupt_vector_fire(__PINION_INTERRUPT_PAGEFAULT);
 		scheduler_schedule();
 		return;
 	}
@@ -58,7 +58,7 @@ void fault(struct tcb *tcb, struct ccb *ccb) {
 
 	if (tcb->ivect < 32) {
 		queue_miscfault(ccb_unload_tcb());
-		interrupt_vector_fire(__PINION_INTERRUPT_VECTOR_MISCFAULT);
+		interrupt_vector_fire(__PINION_INTERRUPT_MISCFAULT);
 		scheduler_schedule();
 		return;
 	}

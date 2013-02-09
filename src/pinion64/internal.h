@@ -343,13 +343,11 @@ struct tcb *ccb_unload_tcb(void);
 //
 
 #define TCB_STATE_FREE              0 // free
-#define TCB_STATE_ZOMBIE            1 // zombie
-#define TCB_STATE_SUSPENDEDWAITING  2 // suspended waiting
-#define TCB_STATE_SUSPENDED         3 // suspended
-#define TCB_STATE_WAITING           4 // waiting
-#define TCB_STATE_QUEUED            5 // queued
-#define TCB_STATE_RUNNING           6 // running
-#define TCB_STATE_NULL              7 // nonexistent (not used internally)
+#define TCB_STATE_SUSPENDEDWAITING  1 // suspended waiting
+#define TCB_STATE_SUSPENDED         2 // suspended
+#define TCB_STATE_WAITING           3 // waiting
+#define TCB_STATE_QUEUED            4 // queued
+#define TCB_STATE_RUNNING           5 // running
 
 // Extended State
 struct xstate {

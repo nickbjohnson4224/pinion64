@@ -24,11 +24,11 @@ Things that need to be done before Pinion is fully usable:
 		- document
 	+ thread_resume (thread)
 		- document
-	- thread_reap
+	+ thread_reap
 		- document
-	- thread_pull_state
+	+ thread_pull_state
 		- document
-	- thread_push_state
+	+ thread_push_state
 		- document
 
 - error handing API

@@ -23,7 +23,7 @@ bool apilogic_thread_reap(__PINION_thread_id thread) {
 		return false;
 	}
 
-	if (tcb->state != TCB_STATE_ZOMBIE) {
+	if (tcb->state != TCB_STATE_SUSPENDED) {
 		return false;
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Nick Johnson <nickbjohnson4224 at gmail.com>
+// Copyright (C) 2012-2013 Nick Johnson <nickbjohnson4224 at gmail.com>
 //
 // Permission to use, copy, modify, and distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -19,108 +19,136 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-//
-// API identification
-//
-
-extern const int __PINION_api_major;
-extern const int __PINION_api_minor;
-extern const char *__PINION_implementation;
-
-//
+//////////////////////////////////////////////////////////////////////////////
 // Interrupts
 //
 
-#define __PINION_INTERRUPT_VECTOR_NULL      0x0000
-#define __PINION_INTERRUPT_VECTOR_IRQ(n)    (0x0100 + (n))
-#define __PINION_INTERRUPT_VECTOR_PAGEFAULT 0x0080
-#define __PINION_INTERRUPT_VECTOR_MISCFAULT 0x0081
-#define __PINION_INTERRUPT_VECTOR_ZOMBIE    0x0082
+typedef uint_fast16_t __PINION_interrupt_id;
 
-typedef uint16_t __PINION_interrupt_vector;
+#define __PINION_INTERRUPT_NULL      0x0000
+#define __PINION_INTERRUPT_IRQ(n)    (0x0100 + (n))
+#define __PINION_INTERRUPT_PAGEFAULT 0x0080
+#define __PINION_INTERRUPT_MISCFAULT 0x0081
+#define __PINION_INTERRUPT_ZOMBIE    0x0082
 
 #define __PINION_TAP_COUNT 4
 
-typedef uint8_t __PINION_tap_index;
+typedef uint_fast8_t __PINION_tap_index;
 
 bool 
 __PINION_interrupt_set_tap(
 	__PINION_tap_index index, 
-	__PINION_interrupt_vector vec);
+	__PINION_interrupt_id vec);
 
-__PINION_interrupt_vector 
+__PINION_interrupt_id
 __PINION_interrupt_get_tap(
 	__PINION_tap_index index);
 
 void 
 __PINION_interrupt_reset(
-	__PINION_interrupt_vector vec);
+	__PINION_interrupt_id vec);
 
-__PINION_interrupt_vector
+__PINION_interrupt_id
 	__PINION_interrupt_wait(void);
 
-//
+//////////////////////////////////////////////////////////////////////////////
 // Threading
 //
 
+//
+// Thread ID Numbers
+//
+// Every thread is given an ID number that can be used as a handle to refer 
+// to it in pinion API calls. This number is unique at any one point in time,
+// but ID numbers may be recycled after threads are freed.
+//
+// All valid thread ID numbers are nonzero and positive, and are typically
+// small. The thread ID number 0 is used to express a null thread, and the
+// thread ID number -1 is used to express the currently running thread.
+//
+
+typedef int_fast32_t __PINION_thread_id;
+
+#define __PINION_THREAD_ID_NULL 0
 #define __PINION_THREAD_ID_SELF -1
 
-typedef uint32_t __PINION_thread_id;
+//
+// Thread Control and Lifecycle
+// 
+
+__PINION_thread_id __PINION_thread_create(void);
+void __PINION_thread_yield(void);
+bool __PINION_thread_pause (__PINION_thread_id thread);
+bool __PINION_thread_resume(__PINION_thread_id thread);
+void __PINION_thread_exit(void) __attribute__((noreturn));
+bool __PINION_thread_reap(__PINION_thread_id thread);
+
+//
+// Thread State
+//
+// A thread has many components to its state. These can be divided into the
+// state of the processor registers and the pinion metadata associated with
+// the thread. Within those, there are also many sub-categories.
+//
+
+typedef uint_fast16_t __PINION_thread_state_class;
+
+#define __PINION_THREAD_STATE_CLASS_REGS        0x00FF
+#define __PINION_THREAD_STATE_CLASS_REGS_CALLEE 0x0007
+#define __PINION_THREAD_STATE_CLASS_REGS_IP     0x0001
+#define __PINION_THREAD_STATE_CLASS_REGS_SP     0x0002
+#define __PINION_THREAD_STATE_CLASS_REGS_CALLER 0x0038
+#define __PINION_THREAD_STATE_CLASS_REGS_SYSTEM 0x0040
+#define __PINION_THREAD_STATE_CLASS_REGS_OPAQUE 0x0080
 
 struct __PINION_thread_state {
 
-	// interrupt taps
-	__PINION_interrupt_vector tap[__PINION_TAP_COUNT];
-	uint64_t tap_state;
+	// register state
 
-	// fault information (readonly)
-	uint64_t fault_type;
-	uint64_t fault_address;
-
-	// register states
-
-	// general-purpose registers
-	uint64_t rax;
-	uint64_t rcx;
+	// CLASS_REGS_CALLEE (callee-saved)
+	uint64_t rip; // CLASS_REGS_IP (instruction pointer)
+	uint64_t rsp; // CLASS_REGS_SP (stack pointer)
 	uint64_t rbx;
-	uint64_t rdx;
-	uint64_t rdi;
-	uint64_t rsi;
-	uint64_t rsp;
 	uint64_t rbp;
-	uint64_t r8;
-	uint64_t r9;
-	uint64_t r10;
-	uint64_t r11;
 	uint64_t r12;
 	uint64_t r13;
 	uint64_t r14;
 	uint64_t r15;
 
-	// instruction pointer
-	uint64_t rip;
+	// CLASS_REGS_CALLER (caller-saved)
+	uint64_t rax;
+	uint64_t rcx;
+	uint64_t rdx;
+	uint64_t rdi;
+	uint64_t rsi;
+	uint64_t r8;
+	uint64_t r9;
+	uint64_t r10;
+	uint64_t r11;
 
-	// segment registers (readonly)
+	// CLASS_REGS_SYSTEM (system-set)
 	uint64_t fs;
 	uint64_t gs;
 	uint64_t cs;
 	uint64_t ss;
 	uint64_t ds;
-
-	// extended (SSE/AVX) registers
-	// TODO figure out internal structure
+	
+	// CLASS_REGS_OPAQUE (opaque)
 	uint8_t xstate[512];
 
+	// paging state
+	
 } __attribute__((packed));
 
-__PINION_thread_id __PINION_thread_create(const struct __PINION_thread_state *state);
-void __PINION_thread_yield(void);
-bool __PINION_thread_pause (__PINION_thread_id thread);
-bool __PINION_thread_pull_state(__PINION_thread_id thread, struct __PINION_thread_state *state);
-bool __PINION_thread_push_state(__PINION_thread_id thread, const struct __PINION_thread_state *state);
-bool __PINION_thread_resume(__PINION_thread_id thread);
-void __PINION_thread_exit(void);
-bool __PINION_thread_reap(__PINION_thread_id thread);
+bool __PINION_thread_pull_state(
+	__PINION_thread_id thread, 
+	__PINION_thread_state_class state_class,
+	struct __PINION_thread_state *state);
+
+bool __PINION_thread_push_state(
+	__PINION_thread_id thread, 
+	__PINION_thread_state_class state_class,
+	const struct __PINION_thread_state *state);
 
 //
 // Fault handling
@@ -147,8 +175,8 @@ __PINION_thread_id __PINION_thread_get_zombie(void);
 #define __PINION_PAGE_CACHE_DISABLE 0x1000
 #define __PINION_PAGE_WRITE_THROUGH 0x2000
 
-typedef uint8_t  __PINION_pagetable_id;
-typedef uint64_t __PINION_virtaddr;
+typedef uint_fast8_t __PINION_pagetable_id;
+typedef uintptr_t __PINION_virtaddr;
 typedef uint64_t __PINION_physaddr;
 typedef uint64_t __PINION_pageflags;
 
