@@ -53,12 +53,14 @@ uint64_t api_resolve(const char *symbol) {
 	APICATCH(interrupt_reset);
 	APICATCH(interrupt_wait);
 
-	APICATCH(thread_get_pagefault);
-	APICATCH(thread_get_miscfault);
-	APICATCH(thread_get_zombie);
+	APICATCH(fault_get_pagefault);
+	APICATCH(fault_get_miscfault);
+	APICATCH(fault_get_zombie);
 
 	APICATCH(page_set);
 	APICATCH(page_get);
+
+	APICATCH(memory_map_read);
 
 	return 0;
 }

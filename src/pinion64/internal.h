@@ -90,6 +90,7 @@ void mutex_release(uint8_t *mutex);
 void pmm_init(void *mmap);
 void *pmm_alloc();
 uint64_t pmm_get_pinion_load_addr(void);
+bool pmm_get_high_memory_map(uint64_t index, uint64_t *base, uint64_t *size);
 
 void *ccb_alloc();
 void ccb_free(void *ccb);

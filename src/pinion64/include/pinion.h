@@ -20,38 +20,6 @@
 #include <stdbool.h>
 
 //////////////////////////////////////////////////////////////////////////////
-// Interrupts
-//
-
-typedef uint_fast16_t __PINION_interrupt_id;
-
-#define __PINION_INTERRUPT_NULL      0x0000
-#define __PINION_INTERRUPT_IRQ(n)    (0x0100 + (n))
-#define __PINION_INTERRUPT_PAGEFAULT 0x0080
-#define __PINION_INTERRUPT_MISCFAULT 0x0081
-#define __PINION_INTERRUPT_ZOMBIE    0x0082
-
-#define __PINION_TAP_COUNT 4
-
-typedef uint_fast8_t __PINION_tap_index;
-
-bool 
-__PINION_interrupt_set_tap(
-	__PINION_tap_index index, 
-	__PINION_interrupt_id vec);
-
-__PINION_interrupt_id
-__PINION_interrupt_get_tap(
-	__PINION_tap_index index);
-
-void 
-__PINION_interrupt_reset(
-	__PINION_interrupt_id vec);
-
-__PINION_interrupt_id
-	__PINION_interrupt_wait(void);
-
-//////////////////////////////////////////////////////////////////////////////
 // Threading
 //
 
@@ -75,35 +43,98 @@ typedef int_fast32_t __PINION_thread_id;
 //
 // Thread Control and Lifecycle
 // 
+// Threads have four possible states: free, suspended, ready, and running.
+// The thread lifecycle API calls control the transition of threads between
+// these states.
+// 
+// The free state is for threads that have not been allocated yet. The ready
+// and running states are for threads that are in the scheduling queue and
+// being run, respectively; from an outside thread's view, they are 
+// indistinguishable. The suspended state is for threads that cannot be run
+// currently, but allows other threads to access register state safely. The
+// suspended state may also result from threads causing hardware faults.
+//
+
+//
+// thread_create - create a new thread
+//
+// Constructs a new thread and returns its ID number; if something goes wrong,
+// it returns THREAD_ID_NULL (i.e. 0). If successful, the thread is initially
+// in a suspended state and its register state is undefined.
+//
+// Returns new thread ID on success, zero on failure.
+//
 
 __PINION_thread_id __PINION_thread_create(void);
-void __PINION_thread_yield(void);
-bool __PINION_thread_pause (__PINION_thread_id thread);
-bool __PINION_thread_resume(__PINION_thread_id thread);
-void __PINION_thread_exit(void) __attribute__((noreturn));
+
+//
+// thread_reap - destroy a thread
+//
+// Completely frees the (pinion-controlled) state of a suspended thread. The
+// thread's ID is then available for reallocation.
+//
+// Returns true on success, false on failure.
+//
+
 bool __PINION_thread_reap(__PINION_thread_id thread);
+
+//
+// thread_pause - suspend a running thread
+//
+// Suspends the given running thread so that its state can be externally
+// examined and/or it can be reaped. If thread is THREAD_ID_SELF (i.e. -1)
+// then the currently running thread is suspended. The given thread must
+// be in a ready or running state to be suspended.
+// 
+// Parameter thread: thread ID of thread to suspend.
+//
+// Returns true on success, false on failure.
+// 
+
+bool __PINION_thread_pause(__PINION_thread_id thread);
+
+//
+// thread_resume - resume a suspended thread
+//
+// Resumes the given suspended thread. The given thread must be in a suspended
+// state.
+//
+// Parameter thread: thread ID of the thread to resume.
+//
+// Returns true on success, false on failure.
+//
+
+bool __PINION_thread_resume(__PINION_thread_id thread);
+
+//
+// thread_yield - yield current thread timeslice
+//
+
+void __PINION_thread_yield(void);
+
+//
+// thread_exit - complete the current thread and zombify
+//
+
+void __PINION_thread_exit(void) __attribute__((noreturn));
 
 //
 // Thread State
 //
-// A thread has many components to its state. These can be divided into the
-// state of the processor registers and the pinion metadata associated with
-// the thread. Within those, there are also many sub-categories.
+// TODOC
 //
 
 typedef uint_fast16_t __PINION_thread_state_class;
 
+#define __PINION_THREAD_STATE_CLASS_EVERYTHING  0xFFFF
 #define __PINION_THREAD_STATE_CLASS_REGS        0x00FF
 #define __PINION_THREAD_STATE_CLASS_REGS_CALLEE 0x0007
 #define __PINION_THREAD_STATE_CLASS_REGS_IP     0x0001
 #define __PINION_THREAD_STATE_CLASS_REGS_SP     0x0002
-#define __PINION_THREAD_STATE_CLASS_REGS_CALLER 0x0038
-#define __PINION_THREAD_STATE_CLASS_REGS_SYSTEM 0x0040
-#define __PINION_THREAD_STATE_CLASS_REGS_OPAQUE 0x0080
+#define __PINION_THREAD_STATE_CLASS_REGS_CALLER 0x0008
+#define __PINION_THREAD_STATE_CLASS_REGS_SYSTEM 0x0010
 
 struct __PINION_thread_state {
-
-	// register state
 
 	// CLASS_REGS_CALLEE (callee-saved)
 	uint64_t rip; // CLASS_REGS_IP (instruction pointer)
@@ -133,34 +164,36 @@ struct __PINION_thread_state {
 	uint64_t ss;
 	uint64_t ds;
 	
-	// CLASS_REGS_OPAQUE (opaque)
-	uint8_t xstate[512];
-
-	// paging state
-	
 } __attribute__((packed));
 
-bool __PINION_thread_pull_state(
+//
+// thread_pull_state - read the state of a thread
+//
+
+bool 
+__PINION_thread_pull_state(
 	__PINION_thread_id thread, 
 	__PINION_thread_state_class state_class,
 	struct __PINION_thread_state *state);
 
-bool __PINION_thread_push_state(
+//
+// thread_push_state - write the state of a thread
+//
+
+bool 
+__PINION_thread_push_state(
 	__PINION_thread_id thread, 
 	__PINION_thread_state_class state_class,
 	const struct __PINION_thread_state *state);
 
-//
-// Fault handling
-//
-
-__PINION_thread_id __PINION_thread_get_pagefault(void);
-__PINION_thread_id __PINION_thread_get_miscfault(void);
-__PINION_thread_id __PINION_thread_get_zombie(void);
-
-//
+//////////////////////////////////////////////////////////////////////////////
 // Paging
 //
+
+typedef uint_fast8_t __PINION_pagetable_id;
+typedef uintptr_t __PINION_virtaddr;
+typedef uint64_t __PINION_physaddr;
+typedef uint64_t __PINION_pageflags;
 
 #define __PINION_PAGE_VALID         0x0001
 
@@ -175,15 +208,18 @@ __PINION_thread_id __PINION_thread_get_zombie(void);
 #define __PINION_PAGE_CACHE_DISABLE 0x1000
 #define __PINION_PAGE_WRITE_THROUGH 0x2000
 
-typedef uint_fast8_t __PINION_pagetable_id;
-typedef uintptr_t __PINION_virtaddr;
-typedef uint64_t __PINION_physaddr;
-typedef uint64_t __PINION_pageflags;
+//
+// page_set - change page mappings
+//
 
 bool __PINION_page_set(__PINION_virtaddr virtual_base, 
 	__PINION_physaddr physical_base,
 	__PINION_pageflags page_flags, 
 	size_t length);
+
+//
+// page_get - get translation and page flags of a virtual address
+//
 
 struct __PINION_page_content {
 	__PINION_physaddr  paddr;
@@ -193,25 +229,202 @@ struct __PINION_page_content {
 struct __PINION_page_content __PINION_page_get(
 	__PINION_virtaddr virtual_base);
 
-//
+//////////////////////////////////////////////////////////////////////////////
 // Page Tables
 //
+// TODO
+
+//////////////////////////////////////////////////////////////////////////////
+// Interrupts
+//
 
 //
-// Object Manager
+// Interrupt ID Numbers
 //
 
-struct pinion_object {
-	void *base;
-	uint32_t size;
-	uint32_t type;
-	char name[48];
+typedef uint_fast16_t __PINION_interrupt_id;
+
+#define __PINION_INTERRUPT_NULL      0x0000
+#define __PINION_INTERRUPT_IRQ(n)    (0x0100 + (n))
+#define __PINION_INTERRUPT_PAGEFAULT 0x0080
+#define __PINION_INTERRUPT_MISCFAULT 0x0081
+#define __PINION_INTERRUPT_ZOMBIE    0x0082
+
+//
+// Interrupt Taps
+//
+// TODOC
+//
+
+typedef uint_fast8_t __PINION_tap_index;
+
+#define __PINION_TAP_COUNT 4
+
+//
+// interrupt_set_tap
+//
+
+bool 
+__PINION_interrupt_set_tap(
+	__PINION_tap_index index, 
+	__PINION_interrupt_id vec);
+
+//
+// interrupt_get_tap
+//
+
+__PINION_interrupt_id
+__PINION_interrupt_get_tap(
+	__PINION_tap_index index);
+
+//
+// interrupt_reset
+//
+
+void 
+__PINION_interrupt_reset(
+	__PINION_interrupt_id vec);
+
+//
+// interrupt_wait
+//
+
+__PINION_interrupt_id
+	__PINION_interrupt_wait(void);
+
+//////////////////////////////////////////////////////////////////////////////
+// Fault Handling
+//
+
+//
+// fault_get_pagefault - handle a page fault
+//
+// Returns true on success, false on failure.
+//
+
+struct __PINION_pagefault_info {
+	__PINION_thread_id thread;
+	__PINION_virtaddr  vaddr;
+	__PINION_physaddr  paddr;
+	__PINION_pageflags flags;
 } __attribute__((packed));
 
-struct pinion_object_list {
-	uint32_t count;
-	uint32_t reserved;
-	struct pinion_object object[];
+bool __PINION_fault_get_pagefault(struct __PINION_pagefault_info *info);
+
+//
+// fault_get_zombie - handle a zombie thread
+//
+// Returns true on success, false on failure.
+//
+
+struct __PINION_zombie_info {
+	__PINION_thread_id thread;
+};
+
+bool __PINION_fault_get_zombie(struct __PINION_zombie_info *info);
+
+//
+// fault_get_miscfault - handle an uncategorized hardware fault
+//
+// Returns true on success, false on failure.
+//
+
+struct __PINION_miscfault_info {
+	__PINION_thread_id thread;
+	uint64_t type;
+	uint64_t errcode;
 } __attribute__((packed));
+
+bool __PINION_fault_get_miscfault(struct __PINION_miscfault_info *info);
+
+//////////////////////////////////////////////////////////////////////////////
+// Physical Memory Map
+//
+// Pinion builds a map of free physical memory regions (usually passed to it 
+// from the bootloader) which it makes available for further memory 
+// management. This map is set at boot and will never change for any reason.
+// Pinion itself requires memory, so it reserves an arbitrary region of free
+// memory for itself; this region is typically very small, but is completely
+// implementation-dependent (it does appear as non-free in the memory map)
+//
+// The memory map is composed of a sequence of free physcial memory regions
+// expressed as base and limit physical addresses. These regions are 
+// guaranteed to be freely usable from address base to address limit-1, i.e.
+// the interval [base, limit). A null region is one with base and limit of 0.
+// 
+// The indices used to address the non-null regions of the memory map are 
+// contiguous and start at index 0. Regions are guaranteed to be disjoint,
+// page-aligned, and to have at least one page of non-free memory between 
+// them.
+//
+
+typedef uint_fast8_t __PINION_memory_map_index;
+
+struct __PINION_memory_map_region {
+	__PINION_physaddr base;
+	__PINION_physaddr limit;
+} __attribute__((packed));
+
+//
+// memory_map_read - read a memory map region
+//
+// Parameter index: index of region to read
+//
+// Returns the region described by the given index into the pinion memory map,
+// or a null region of the index is out of bounds.
+//
+
+struct __PINION_memory_map_region __PINION_memory_map_read(
+	__PINION_memory_map_index index);
+
+//////////////////////////////////////////////////////////////////////////////
+// Loadable Objects
+//
+
+//
+// In its capacity as a bootloader, pinion allows additional binary data to
+// be loaded along with the kernel image in the form of "loadable objects".
+// These are akin to GRUB modules.
+//
+// Unlike GRUB modules, loadable objects are not accessible when the kernel
+// starts, and must be loaded explicitly. This has numerous advantages, and is
+// possible for pinion because it stays resident unlike a bootloader. Loadable
+// objects are intended to essentially form a simple read-only filesystem.
+//
+
+typedef uint_fast8_t __PINION_object_id;
+
+struct __PINION_object_stat {
+	uint64_t size;
+	char name[56];
+};
+
+//
+// object_stat - read loadable object metadata
+//
+
+bool 
+__PINION_object_stat(
+	__PINION_object_id id, 
+	struct __PINION_object_stat *stat);
+
+//
+// object_find - locate a loadable object by name
+//
+
+__PINION_object_id
+__PINION_object_find(
+	const char *object_name);
+
+//
+// object_read - read the contents of a loadable object into memory
+//
+
+uint32_t
+__PINION_object_read(
+	__PINION_object_id id, 
+	uint64_t offset, 
+	void *buffer, 
+	uint32_t size);
 
 #endif//__PINION_H

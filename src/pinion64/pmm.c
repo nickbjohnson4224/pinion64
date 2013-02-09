@@ -32,6 +32,18 @@ static uint64_t pmm_map_high_space[17];
 static struct pmm_map * const pmm_map_low  = (void*) pmm_map_low_space;
 static struct pmm_map * const pmm_map_high = (void*) pmm_map_high_space;
 
+bool pmm_get_high_memory_map(uint64_t index, uint64_t *base, uint64_t *size) {
+	
+	if (index > pmm_map_high->count) {
+		return false;
+	}
+
+	*base = pmm_map_high->entry[index].base;
+	*size = pmm_map_high->entry[index].size;
+
+	return true;
+}
+
 struct unfold_mmap {
 	uint64_t total;
 	uint64_t count;

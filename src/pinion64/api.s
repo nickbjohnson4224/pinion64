@@ -1,4 +1,4 @@
-; Copyright (C) 2012 Nick Johnson <nickbjohnson4224 at gmail.com>
+; Copyright (C) 2012-2013 Nick Johnson <nickbjohnson4224 at gmail.com>
 ; 
 ; Permission to use, copy, modify, and distribute this software for any
 ; purpose with or without fee is hereby granted, provided that the above
@@ -85,11 +85,25 @@ apifunc_then_yield interrupt_wait, 0
 
 ; fault handling API ---------------------------------------------------------
 
-apifunc thread_get_pagefault
-apifunc thread_get_miscfault
-apifunc thread_get_zombie
+apifunc thread_get_pagefault ; deprecated
+apifunc thread_get_miscfault ; deprecated
+apifunc thread_get_zombie    ; deprecated
+
+apifunc fault_get_pagefault
+apifunc fault_get_miscfault
+apifunc fault_get_zombie
 
 ; paging API -----------------------------------------------------------------
 
 apifunc page_set
 apifunc page_get
+
+; physical memory map API ----------------------------------------------------
+
+apifunc memory_map_read
+
+; loadable object API --------------------------------------------------------
+
+;apifunc object_stat
+;apifunc object_find
+;apifunc object_read

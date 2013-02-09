@@ -32,10 +32,19 @@ void putx(uint64_t x) {
 
 void main() {
 
-	__PINION_thread_id child = __PINION_thread_create();
+	for (__PINION_memory_map_index i = 0;; i++) {
+		struct __PINION_memory_map_region region =
+			__PINION_memory_map_read(i);
 
-	putx(child);
-	puts("\n");
+		putx(region.base);
+		puts(" ");
+		putx(region.limit);
+		puts("\n");
+
+		if (region.base == 0 && region.limit == 0) {
+			break;
+		}
+	}
 
 	for(;;);
 }

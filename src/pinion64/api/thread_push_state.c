@@ -15,7 +15,10 @@
 #include "../include/pinion.h"
 #include "../internal.h"
 
-bool apilogic_thread_push_state(__PINION_thread_id thread, const struct __PINION_thread_state *state) {
+bool apilogic_thread_push_state(
+		__PINION_thread_id thread, 
+		__PINION_thread_state_class state_class,
+		const struct __PINION_thread_state *state) {
 	
 	// TODO 
 	// check if *state is properly backed by memory.
@@ -35,27 +38,31 @@ bool apilogic_thread_push_state(__PINION_thread_id thread, const struct __PINION
 		return false;
 	}
 
-	// load state
-	tcb->rax = state->rax;
-	tcb->rcx = state->rcx;
-	tcb->rbx = state->rbx;
-	tcb->rdx = state->rdx;
-	tcb->rdi = state->rdi;
-	tcb->rsi = state->rsi;
-	tcb->rbp = state->rbp;
-	tcb->r8  = state->r8;
-	tcb->r9  = state->r9;
-	tcb->r10 = state->r10;
-	tcb->r11 = state->r11;
-	tcb->r12 = state->r12;
-	tcb->r13 = state->r13;
-	tcb->r14 = state->r14;
-	tcb->r15 = state->r15;
-
-	tcb->rip = state->rip;
-	tcb->rsp = state->rsp;
-
-	// TODO load xstate
+	if (state_class & __PINION_THREAD_STATE_CLASS_REGS_IP) {
+		tcb->rip = state->rip;
+	}
+	if (state_class & __PINION_THREAD_STATE_CLASS_REGS_SP) {
+		tcb->rsp = state->rsp;
+	}
+	if (state_class & __PINION_THREAD_STATE_CLASS_REGS_CALLEE) {
+		tcb->rbx = state->rbx;
+		tcb->rbp = state->rbp;
+		tcb->r12 = state->r12;
+		tcb->r13 = state->r13;
+		tcb->r14 = state->r14;
+		tcb->r15 = state->r15;
+	}
+	if (state_class & __PINION_THREAD_STATE_CLASS_REGS_CALLER) {
+		tcb->rax = state->rax;
+		tcb->rcx = state->rcx;
+		tcb->rdx = state->rdx;
+		tcb->rdi = state->rdi;
+		tcb->rsi = state->rsi;
+		tcb->r8  = state->r8;
+		tcb->r9  = state->r9;
+		tcb->r10 = state->r10;
+		tcb->r11 = state->r11;
+	}
 	
 	return true;
 }
