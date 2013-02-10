@@ -92,8 +92,6 @@ uint64_t pcx_get_trans(uint64_t *pcx, uint64_t addr) {
 
 	uint64_t *pt = pcx;
 
-	mutex_acquire(&pcx_root_lock);
-
 	for (int i = 4; i > 0; i--) {
 		uint64_t idx = (addr >> (12 + 9 * (i - 1))) & 0x1FF;
 
@@ -110,8 +108,6 @@ uint64_t pcx_get_trans(uint64_t *pcx, uint64_t addr) {
 		pt = (void*) ((pt[idx] &~ PF_BITS) + base);
 	}
 
-	mutex_release(&pcx_root_lock);
-
 	return -1;
 }
 
@@ -124,8 +120,6 @@ uint64_t pcx_get_flags(uint64_t *pcx, uint64_t addr) {
 	if (!pcx) pcx = pcx_root;
 
 	uint64_t *pt = pcx;
-
-	mutex_acquire(&pcx_root_lock);
 
 	for (int i = 4; i > 0; i--) {
 		uint64_t idx = (addr >> (12 + 9 * (i - 1))) & 0x1FF;
@@ -143,8 +137,6 @@ uint64_t pcx_get_flags(uint64_t *pcx, uint64_t addr) {
 		pt = (void*) ((pt[idx] &~ PF_BITS) + base);
 	}
 
-	mutex_release(&pcx_root_lock);
-
 	return 0;
 }
 
@@ -156,8 +148,6 @@ int pcx_set_frame(uint64_t *pcx, uint64_t addr, uint64_t size, uint64_t frame, u
 	if (!pcx) pcx = pcx_root;
 
 	uint64_t *pt = pcx;
-
-	mutex_acquire(&pcx_root_lock);
 
 	for (int i = 4; i > 1; i--) {
 		uint64_t idx = (addr >> (12 + 9 * (i - 1))) & 0x1FF;
@@ -182,6 +172,5 @@ int pcx_set_frame(uint64_t *pcx, uint64_t addr, uint64_t size, uint64_t frame, u
 	uint64_t idx = (addr >> 12) & 0x1FF;
 	pt[idx] = frame | flags;
 
-	mutex_release(&pcx_root_lock);
 	return 0;
 }

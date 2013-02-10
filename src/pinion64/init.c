@@ -158,6 +158,9 @@ void init(uint64_t loader, struct unfold64_objl *object_list, struct unfold64_mm
 	irq_vector_page_vtable.on_reset = irq_on_reset;
 	interrupt_add_vector_page(0x0100, &irq_vector_page_vtable);
 
+	// initialize ACPI (for IRQ routing info)
+	init_acpi();
+
 	// allocate initial thread TCB and add to scheduler
 	scheduler_add_tcb(tcb_new());
 

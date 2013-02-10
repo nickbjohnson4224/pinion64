@@ -74,6 +74,12 @@ const char *config_read(const char *section, const char *property);
 uint64_t config_read_as_ptr(const char *section, const char *property, uint64_t sentinel);
 
 //
+// ACPI setup
+//
+
+void init_acpi(void);
+
+//
 // Pinion API
 //
 
